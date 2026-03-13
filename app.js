@@ -16,6 +16,23 @@ const MODELS = [
 
 const DEFAULT_ANALYSIS_MODEL = 'gpt-5.2-codex';
 
+const DEFAULT_MODELS = [
+  'gemini-3.1-pro-preview',
+  'claude-sonnet-4-6',
+  'gpt-5.2-codex'
+];
+
+// Panel color palette — cycles for 4+ models
+const PANEL_COLORS = [
+  { css: 'var(--accent-cyan)',    shadow: 'rgba(8, 145, 178, 0.3)' },
+  { css: 'var(--accent-violet)',  shadow: 'rgba(139, 92, 246, 0.3)' },
+  { css: 'var(--accent-emerald)', shadow: 'rgba(5, 150, 105, 0.3)' },
+  { css: '#e67e22',              shadow: 'rgba(230, 126, 34, 0.3)' },
+  { css: '#e84393',              shadow: 'rgba(232, 67, 147, 0.3)' },
+  { css: '#00b894',              shadow: 'rgba(0, 184, 148, 0.3)' },
+  { css: '#0984e3',              shadow: 'rgba(9, 132, 227, 0.3)' }
+];
+
 // ─── PROVIDER WEB INTERFACES ───
 function getModelProvider(modelName) {
   const m = modelName.toLowerCase();
@@ -63,7 +80,9 @@ let state = {
   rounds: [],           // array of round objects
   customInstructions: DEFAULT_INSTRUCTIONS,
   abortControllers: {},
-  pendingFiles: []      // [{name, size, type, dataUrl, textContent}]
+  pendingFiles: [],     // [{name, size, type, dataUrl, textContent}]
+  modelSlots: [],       // [{id: 0}, {id: 1}, ...] — dynamic model slots
+  nextSlotId: 0         // auto-incrementing slot ID
 };
 
 // Round object shape:
@@ -78,6 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
   populateModelSelectors();
   bindEvents();
   loadCustomInstructions();
+  configureMarked();
 });
 
 function initApiKey() {
@@ -97,28 +117,195 @@ function loadCustomInstructions() {
 }
 
 function populateModelSelectors() {
-  ['model1', 'model2', 'model3', 'analysisModel'].forEach(id => {
-    const sel = document.getElementById(id);
-    if (id !== 'analysisModel') {
-      const opt = document.createElement('option');
-      opt.value = ''; opt.textContent = '— None —';
-      sel.appendChild(opt);
-    }
-    MODELS.forEach(g => {
-      const grp = document.createElement('optgroup');
-      grp.label = g.group;
-      g.models.forEach(m => {
-        const opt = document.createElement('option');
-        opt.value = m; opt.textContent = m;
-        grp.appendChild(opt);
-      });
-      sel.appendChild(grp);
-    });
+  // Populate analysis model selector using same createModelSelect
+  const analysisSel = document.getElementById('analysisModel');
+  const templateSel = createModelSelect(false);
+  // Move options from template to the actual select
+  while (templateSel.firstChild) {
+    analysisSel.appendChild(templateSel.firstChild);
+  }
+  analysisSel.value = DEFAULT_ANALYSIS_MODEL;
+
+  // Try to load saved config from localStorage
+  const savedConfig = loadModelConfig();
+
+  if (savedConfig) {
+    // Restore saved model slots
+    savedConfig.slots.forEach(modelValue => addModelSlot(modelValue, true));
+    // Restore analysis model
+    if (savedConfig.analysisModel) analysisSel.value = savedConfig.analysisModel;
+  } else {
+    // Create default 3 model slots
+    DEFAULT_MODELS.forEach(defaultModel => addModelSlot(defaultModel, true));
+  }
+
+  // Bind add-model button
+  document.getElementById('addModelBtn').addEventListener('click', () => {
+    addModelSlot('');
+    saveModelConfig();
   });
-  document.getElementById('model1').value = 'gemini-3.1-pro-preview';
-  document.getElementById('model2').value = 'claude-sonnet-4-6';
-  document.getElementById('model3').value = 'gpt-5.2-codex';
+
+  // Bind reset button
+  document.getElementById('resetModelsBtn').addEventListener('click', resetModelsToDefault);
+
+  // Save analysis model changes
+  analysisSel.addEventListener('change', () => saveModelConfig());
+}
+
+function createModelSelect(includeNone) {
+  const sel = document.createElement('select');
+  if (includeNone) {
+    const opt = document.createElement('option');
+    opt.value = ''; opt.textContent = '— None —';
+    sel.appendChild(opt);
+  }
+  MODELS.forEach(g => {
+    const grp = document.createElement('optgroup');
+    grp.label = g.group;
+    g.models.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m; opt.textContent = m;
+      grp.appendChild(opt);
+    });
+    sel.appendChild(grp);
+  });
+  return sel;
+}
+
+function addModelSlot(defaultModel, skipSave) {
+  const slotId = state.nextSlotId++;
+  state.modelSlots.push({ id: slotId });
+  const position = state.modelSlots.length;
+  const colorIdx = (position - 1) % PANEL_COLORS.length;
+  const color = PANEL_COLORS[colorIdx];
+
+  const container = document.getElementById('modelSlotsContainer');
+  const wrapper = document.createElement('div');
+  wrapper.className = 'model-slot';
+  wrapper.id = `model-slot-wrapper-${slotId}`;
+
+  const label = document.createElement('label');
+  const dot = document.createElement('span');
+  dot.className = 'dot';
+  dot.style.background = color.css;
+  dot.style.boxShadow = `0 0 6px ${color.shadow}`;
+  label.appendChild(dot);
+  label.appendChild(document.createTextNode(` Model ${position} `));
+
+  // Remove button
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'slot-remove-btn';
+  removeBtn.title = 'Remove this model';
+  removeBtn.textContent = '✕';
+  removeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    removeModelSlot(slotId);
+  });
+  label.appendChild(removeBtn);
+
+  const sel = createModelSelect(true);
+  sel.id = `model-slot-${slotId}`;
+  if (defaultModel) sel.value = defaultModel;
+
+  // Fade behavior: when "None" is selected, fade the slot
+  updateSlotFade(wrapper, sel.value);
+  sel.addEventListener('change', () => {
+    updateSlotFade(wrapper, sel.value);
+    saveModelConfig();
+  });
+
+  wrapper.appendChild(label);
+  wrapper.appendChild(sel);
+  container.appendChild(wrapper);
+
+  updateSlotLabels();
+  if (!skipSave) saveModelConfig();
+  return slotId;
+}
+
+function removeModelSlot(slotId) {
+  if (state.modelSlots.length <= 1) {
+    showToast('Must have at least one model', 'error');
+    return;
+  }
+  const idx = state.modelSlots.findIndex(s => s.id === slotId);
+  if (idx === -1) return;
+  state.modelSlots.splice(idx, 1);
+
+  const wrapper = document.getElementById(`model-slot-wrapper-${slotId}`);
+  if (wrapper) wrapper.remove();
+
+  updateSlotLabels();
+  saveModelConfig();
+}
+
+function updateSlotFade(wrapper, value) {
+  if (!value) {
+    wrapper.classList.add('slot-faded');
+  } else {
+    wrapper.classList.remove('slot-faded');
+  }
+}
+
+function updateSlotLabels() {
+  state.modelSlots.forEach((slot, i) => {
+    const wrapper = document.getElementById(`model-slot-wrapper-${slot.id}`);
+    if (!wrapper) return;
+    const label = wrapper.querySelector('label');
+    const dot = label.querySelector('.dot');
+    const removeBtn = label.querySelector('.slot-remove-btn');
+    const colorIdx = i % PANEL_COLORS.length;
+    const color = PANEL_COLORS[colorIdx];
+    dot.style.background = color.css;
+    dot.style.boxShadow = `0 0 6px ${color.shadow}`;
+    // Rebuild label text
+    label.textContent = '';
+    label.appendChild(dot);
+    label.appendChild(document.createTextNode(` Model ${i + 1} `));
+    label.appendChild(removeBtn);
+  });
+}
+
+// ─── MODEL CONFIG PERSISTENCE ───
+function saveModelConfig() {
+  const slots = state.modelSlots.map(slot => {
+    const sel = document.getElementById(`model-slot-${slot.id}`);
+    return sel ? sel.value : '';
+  });
+  const analysisModel = document.getElementById('analysisModel').value;
+  const config = { slots, analysisModel };
+  localStorage.setItem('model_config', JSON.stringify(config));
+}
+
+function loadModelConfig() {
+  try {
+    const raw = localStorage.getItem('model_config');
+    if (!raw) return null;
+    const config = JSON.parse(raw);
+    if (!config.slots || !Array.isArray(config.slots) || config.slots.length === 0) return null;
+    return config;
+  } catch {
+    return null;
+  }
+}
+
+function resetModelsToDefault() {
+  // Clear saved config
+  localStorage.removeItem('model_config');
+
+  // Remove all existing slots
+  const container = document.getElementById('modelSlotsContainer');
+  container.innerHTML = '';
+  state.modelSlots = [];
+  state.nextSlotId = 0;
+
+  // Recreate defaults
+  DEFAULT_MODELS.forEach(defaultModel => addModelSlot(defaultModel, true));
+
+  // Reset analysis model
   document.getElementById('analysisModel').value = DEFAULT_ANALYSIS_MODEL;
+
+  showToast('Models reset to defaults', 'success');
 }
 
 function bindEvents() {
@@ -302,10 +489,11 @@ function buildMessageContent(promptText, files) {
 // ─── GET ACTIVE MODELS ───
 function getActiveModels() {
   const models = [];
-  for (let i = 1; i <= 3; i++) {
-    const m = document.getElementById(`model${i}`).value;
-    if (m) models.push({ index: i - 1, model: m });
-  }
+  state.modelSlots.forEach((slot, position) => {
+    const sel = document.getElementById(`model-slot-${slot.id}`);
+    const m = sel ? sel.value : '';
+    if (m) models.push({ index: position, model: m });
+  });
   return models;
 }
 
@@ -358,17 +546,20 @@ async function createAndRunRound(prompt, isInitial, files = []) {
     return hist;
   });
 
+  const slotCount = state.modelSlots.length;
   const round = {
     prompt,
-    responses: ['', '', ''],
-    responseModels: models.map(m => m.model),
-    usage: [null, null, null],
+    responses: new Array(slotCount).fill(''),
+    responseModels: new Array(slotCount).fill(''),
+    usage: new Array(slotCount).fill(null),
     analysis: '',
     analysisUsage: null,
     histories,
     collapsed: false,
     files: files
   };
+  // Map active models to their response slots
+  models.forEach(({ index, model }) => { round.responseModels[index] = model; });
   state.rounds.push(round);
 
   // Build DOM
@@ -429,12 +620,19 @@ function buildRoundDOM(roundIdx, prompt, isInitial, models, files = []) {
     </div>
     <div class="round-content">
       <div class="responses-grid" id="grid-${roundIdx}">
-        ${models.map(({ index }) => `
-          <div class="response-panel panel-${index + 1} ${models.length === 1 ? '' : ''}" id="rpanel-${roundIdx}-${index}">
+        ${models.map(({ index }, modelPos) => {
+          const colorIdx = index % PANEL_COLORS.length;
+          const color = PANEL_COLORS[colorIdx];
+          const modelObj = models.find(m => m.index === index);
+          const provider = getModelProvider(modelObj.model);
+          const isLast = modelPos === models.length - 1;
+          return `
+          <div class="response-panel" id="rpanel-${roundIdx}-${index}"
+               style="--panel-color: ${color.css}; --panel-shadow: ${color.shadow}">
             <div class="panel-header">
               <div class="panel-header-left">
-                <div class="panel-indicator"></div>
-                <span class="panel-title">${escapeHtml(models.find(m => m.index === index).model)}</span>
+                <div class="panel-indicator" style="background: ${color.css}; box-shadow: 0 0 6px ${color.shadow}"></div>
+                <span class="panel-title">${escapeHtml(modelObj.model)}</span>
               </div>
               <div class="panel-actions">
                 <button class="btn-expand" title="Expand" onclick="toggleExpandPanel(${roundIdx},${index})">
@@ -453,21 +651,17 @@ function buildRoundDOM(roundIdx, prompt, isInitial, models, files = []) {
               <div class="panel-status"><div class="loading-dots"><span></span><span></span><span></span></div></div>
             </div>
             <div class="panel-footer" id="footer-${roundIdx}-${index}" style="display:none"></div>
-            ${(() => {
-      const provider = getModelProvider(models.find(m => m.index === index).model);
-      if (!provider) return '';
-      return `<div class="panel-followup-bar">
+            ${provider ? `<div class="panel-followup-bar">
                 <button class="btn-followup" title="Copy prompt and open ${provider.name}" onclick="followUpReask(${roundIdx},${index})">
                   ${provider.icon} Re-ask on ${provider.name}
                 </button>
                 <button class="btn-followup btn-followup-ctx" title="Copy prompt + response and open ${provider.name}" onclick="followUpWithContext(${roundIdx},${index})">
                   📋→${provider.icon} Follow up with context
                 </button>
-              </div>`;
-    })()}
+              </div>` : ''}
           </div>
-          ${index < Math.max(...models.map(m => m.index)) && models.length > 1 ? `<div class="resize-handle" id="handle-${roundIdx}-${index}"></div>` : ''}
-        `).join('')}
+          ${!isLast && models.length > 1 ? `<div class="resize-handle" id="handle-${roundIdx}-${index}"></div>` : ''}
+        `;}).join('')}
       </div>
       <div class="analysis-section" id="analysis-${roundIdx}">
         <div class="analysis-header">
@@ -911,11 +1105,15 @@ function followUpWithContext(roundIdx, panelIndex) {
   });
 }
 
-function savePanelMd(roundIdx, panelIndex) {
+async function savePanelMd(roundIdx, panelIndex) {
   const rd = state.rounds[roundIdx];
   const md = rd?.responses[panelIndex];
   if (!md) return showToast('No content', 'error');
-  downloadFile(`${rd.responseModels[panelIndex] || 'response'}-round${roundIdx}.md`, md);
+  const modelName = rd.responseModels[panelIndex] || 'response';
+  const fallback = `${modelName}-round${roundIdx}.md`;
+  showToast('Generating filename…', 'success');
+  const filename = await generateFilename(fallback);
+  downloadFile(filename, md);
 }
 
 function copyAnalysis(roundIdx) {
@@ -924,10 +1122,12 @@ function copyAnalysis(roundIdx) {
   navigator.clipboard.writeText(md).then(() => showToast('Copied!', 'success'));
 }
 
-function saveAnalysis(roundIdx) {
+async function saveAnalysis(roundIdx) {
   const md = state.rounds[roundIdx]?.analysis;
   if (!md) return showToast('No analysis', 'error');
-  downloadFile(`analysis-round${roundIdx}.md`, md);
+  showToast('Generating filename…', 'success');
+  const filename = await generateFilename(`analysis-round${roundIdx}.md`);
+  downloadFile(filename, md);
 }
 
 // ─── SAVE/COPY PER ROUND ───
@@ -948,8 +1148,11 @@ function copyRound(roundIdx) {
   navigator.clipboard.writeText(md).then(() => showToast('Round copied!', 'success'));
 }
 
-function saveRound(roundIdx) {
-  downloadFile(`round-${roundIdx}.md`, buildRoundMd(roundIdx));
+async function saveRound(roundIdx) {
+  const md = buildRoundMd(roundIdx);
+  showToast('Generating filename…', 'success');
+  const filename = await generateFilename(`round-${roundIdx}.md`);
+  downloadFile(filename, md);
 }
 
 // ─── SAVE/COPY ENTIRE CONVERSATION ───
@@ -966,8 +1169,11 @@ function copyEntireConversation() {
   navigator.clipboard.writeText(md).then(() => showToast('Full conversation copied!', 'success'));
 }
 
-function saveEntireConversation() {
-  downloadFile('llm-comparison-full-report.md', buildFullConversationMd());
+async function saveEntireConversation() {
+  const md = buildFullConversationMd();
+  showToast('Generating filename…', 'success');
+  const filename = await generateFilename('llm-comparison-full-report.md');
+  downloadFile(filename, md);
   showToast('Full report saved!', 'success');
 }
 
@@ -1010,4 +1216,106 @@ function showToast(message, type = 'success') {
   toast.innerHTML = `${type === 'success' ? '✓' : '⚠'} ${escapeHtml(message)}`;
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 3000);
+}
+
+// ─── SMART FILENAME GENERATION ───
+function getInitialPrompt() {
+  // Always use the first round's prompt for filename generation
+  if (state.rounds.length > 0 && state.rounds[0].prompt) {
+    return state.rounds[0].prompt;
+  }
+  return '';
+}
+
+async function generateFilename(fallback) {
+  const prompt = getInitialPrompt();
+  if (!prompt || prompt === '(see attached files)') return fallback;
+
+  try {
+    const analysisModel = document.getElementById('analysisModel').value;
+
+    // Add a timeout so saves don't hang
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
+    const res = await fetch(`${API_BASE}/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.apiKey}` },
+      body: JSON.stringify({
+        model: analysisModel,
+        messages: [
+          {
+            role: 'user',
+            content: `Task: Generate a concise, descriptive filename for an LLM conversation.\nInput Prompt: "${prompt}"\n\nConstraints:\n1. Use 3 to 4 words maximum.\n2. Use only lowercase letters.\n3. Separate words with underscores (_).\n4. Do not include file extensions (like .md).\n5. Return ONLY the filename. No preamble, no quotes, and no explanations.`
+          }
+        ],
+        stream: false,
+        max_tokens: 30
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeout);
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    let filename = data.choices?.[0]?.message?.content?.trim();
+    if (!filename) throw new Error('Empty response');
+
+    // Sanitize the filename
+    filename = sanitizeFilename(filename);
+    if (!filename || filename.length < 3) throw new Error('Too short');
+
+    return filename + '.md';
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      console.warn('Filename generation timed out, using fallback');
+    } else {
+      console.warn('Filename generation failed, using fallback:', err.message);
+    }
+    return fallback;
+  }
+}
+
+function sanitizeFilename(name) {
+  // Remove any markdown formatting, quotes, extension the model may have added
+  name = name.replace(/```/g, '').replace(/`/g, '').replace(/["']/g, '').trim();
+  // Remove .md or other extensions if model included them
+  name = name.replace(/\.\w{1,4}$/i, '');
+  // Replace spaces and hyphens with underscores for consistency
+  name = name.replace(/[\s-]+/g, '_');
+  // Keep only alphanumeric and underscores
+  name = name.replace(/[^a-zA-Z0-9_]/g, '');
+  // Collapse multiple underscores
+  name = name.replace(/_{2,}/g, '_');
+  // Trim underscores from ends
+  name = name.replace(/^_+|_+$/g, '');
+  // Lowercase
+  name = name.toLowerCase();
+  // Truncate to 55 chars
+  if (name.length > 55) name = name.slice(0, 55).replace(/_+$/, '');
+  return name;
+}
+
+// ─── CONFIGURE MARKED FOR INLINE IMAGES ───
+function configureMarked() {
+  const renderer = new marked.Renderer();
+
+  // Custom image renderer for inline display
+  renderer.image = function({ href, title, text }) {
+    const titleAttr = title ? ` title="${escapeHtml(title)}"` : '';
+    const altText = text ? escapeHtml(text) : '';
+    return `<figure class="md-image-figure">
+      <a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">
+        <img src="${escapeHtml(href)}" alt="${altText}"${titleAttr} class="md-inline-image" loading="lazy" />
+      </a>
+      ${altText ? `<figcaption>${altText}</figcaption>` : ''}
+    </figure>`;
+  };
+
+  marked.setOptions({
+    renderer,
+    breaks: true,
+    gfm: true
+  });
 }

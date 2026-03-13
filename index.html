@@ -47,17 +47,12 @@
     <!-- PROMPT SECTION (always at top) -->
     <section class="prompt-section">
       <div class="model-selectors">
-        <div class="model-slot slot-1">
-          <label><span class="dot"></span> Model 1</label>
-          <select id="model1"></select>
+        <div class="model-slots-dynamic" id="modelSlotsContainer">
+          <!-- Dynamic model slots inserted here by JS -->
         </div>
-        <div class="model-slot slot-2">
-          <label><span class="dot"></span> Model 2</label>
-          <select id="model2"></select>
-        </div>
-        <div class="model-slot slot-3">
-          <label><span class="dot"></span> Model 3</label>
-          <select id="model3"></select>
+        <div class="model-slot-actions">
+          <button class="btn btn-ghost btn-add-model" id="addModelBtn" title="Add another model column">+ Model</button>
+          <button class="btn btn-ghost btn-reset-models" id="resetModelsBtn" title="Reset models to defaults">↩ Reset</button>
         </div>
         <div class="analysis-model">
           <label>🔬 Analysis Model</label>
