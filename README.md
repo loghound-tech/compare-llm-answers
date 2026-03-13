@@ -29,9 +29,13 @@ A beautiful single-page web app that lets you compare answers from multiple AI l
 - **Full conversation save/copy** — Save or copy the entire multi-round conversation as a `.md` report
 - **Filename Fallback** — If the AI filename generation times out (10s limit) or fails, a sensible fallback name is used
 
-### Provider Follow-up
-- **Re-ask on Provider** — Copy the prompt and open the model's web UI (ChatGPT, Claude, Gemini, Grok, DeepSeek, Kimi) to re-ask directly
-- **Follow up with Context** — Copy both prompt and response to continue the conversation on the provider's web UI
+### Continue on Your Preferred Provider
+One of the most useful features: once you compare answers and find the model you like best, you can seamlessly continue the conversation on that model's own website.
+
+- **Re-ask on Provider** — Copies your prompt to the clipboard and opens the model's web UI (ChatGPT, Claude, Gemini, Grok, DeepSeek, or Kimi) so you can paste and re-ask directly
+- **Follow up with Context** — Copies both your prompt *and* the model's response, then opens the provider's site — perfect for continuing a deeper conversation with full context
+
+Each response panel shows these buttons at the bottom (e.g., "🤖 Re-ask on ChatGPT" or "📋→🟠 Follow up with context"). This lets you use LLM Compare as your starting point, then seamlessly switch to a specific provider when you've found the answer you want to build on.
 
 ### Persistence
 - **API Key** — Stored in browser `localStorage`, remembered across sessions
@@ -54,31 +58,27 @@ A beautiful single-page web app that lets you compare answers from multiple AI l
 
 ## Quick Start
 
-### Option 1: Python HTTP Server (Recommended)
+1. **Download the files** — Save `index.html`, `app.js`, and `styles.css` to a folder on your computer.
 
-If you have Python 3 installed (comes pre-installed on macOS):
+2. **Open it** — Double-click `index.html` to open it in your browser. That's it!
+
+3. **Bookmark it** — If you like it, bookmark the page (⌘D / Ctrl+D) or add it to your browser favorites so it's always one click away.
+
+> **Tip:** Since the app runs entirely in your browser with no server needed, your bookmarked local file will always work — even offline (except for the API calls themselves, of course).
+
+### Alternative: Local HTTP Server
+
+If you run into any issues with your browser blocking API requests from a `file://` URL, you can serve the files locally:
 
 ```bash
-# Navigate to the project directory
-cd /path/to/compare-llm-answers
-
-# Start a local web server
+# Python (comes pre-installed on macOS)
 python3 -m http.server 8765
-```
 
-Then open your browser to: **http://localhost:8765**
-
-### Option 2: Node.js HTTP Server
-
-```bash
+# Or Node.js
 npx -y http-server . -p 8765
 ```
 
-Then open: **http://localhost:8765**
-
-### Option 3: Open Directly
-
-You can also open `index.html` directly in your browser — however, some browsers may restrict `fetch` requests from `file://` URLs, so a local server is recommended.
+Then open **http://localhost:8765** in your browser.
 
 ## Usage
 
