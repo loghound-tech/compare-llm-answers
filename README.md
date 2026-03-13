@@ -2,6 +2,8 @@
 
 A beautiful single-page web app that lets you compare answers from multiple AI language models side-by-side, with an analysis model providing comparative summaries and support for multi-round follow-up conversations.
 
+![LLM Compare Interface](screenshot.png)
+
 ![LLM Compare](https://img.shields.io/badge/Powered%20by-Abacus%20AI%20RouteLLM-6366f1)
 
 ## Features
