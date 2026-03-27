@@ -380,6 +380,7 @@ body::before {
   white-space: nowrap;
   display: block;
   padding: 0 0.1rem;
+  min-width: 0;
 }
 
 /* Full-description tooltip that shows on hover (desktop) and
@@ -1723,13 +1724,33 @@ body::before {
 
   .model-slots-dynamic {
     flex-direction: column;
-    gap: 0.5rem
+    gap: 0.5rem;
+    min-width: 0;
+    max-width: 100vw
   }
 
   .model-slot {
     min-width: 0;
     max-width: none;
-    width: 100%
+    width: 100%;
+    overflow: hidden
+  }
+
+  .model-info-text {
+    overflow: hidden;
+    min-width: 0;
+    max-width: 100%
+  }
+
+  .model-info-desc-wrapper {
+    overflow: hidden;
+    min-width: 0
+  }
+
+  .model-info-tooltip {
+    max-width: min(320px, 90vw);
+    left: 0;
+    right: auto
   }
 
   .model-slot select,
@@ -1961,4 +1982,85 @@ body::before {
     width: 12px;
     height: 12px
   }
+}
+
+/* ─── PULL TO REFRESH (mobile) ─── */
+.pull-to-refresh-indicator {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 0;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.12), transparent);
+  transition: height 0.2s ease-out;
+  pointer-events: none;
+}
+
+.pull-to-refresh-indicator.active {
+  height: var(--pull-height, 0px);
+}
+
+.pull-to-refresh-indicator.refreshing {
+  height: 56px;
+  transition: height 0.3s ease;
+}
+
+.ptr-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.pull-to-refresh-indicator.active .ptr-content,
+.pull-to-refresh-indicator.refreshing .ptr-content {
+  opacity: 1;
+}
+
+.ptr-arrow {
+  width: 24px;
+  height: 24px;
+  color: var(--accent-indigo);
+  transition: transform 0.2s ease;
+}
+
+.pull-to-refresh-indicator.threshold .ptr-arrow {
+  transform: rotate(180deg);
+}
+
+.ptr-spinner {
+  width: 22px;
+  height: 22px;
+  border: 2.5px solid rgba(99, 102, 241, 0.2);
+  border-top-color: var(--accent-indigo);
+  border-radius: 50%;
+  animation: ptrSpin 0.7s linear infinite;
+  display: none;
+}
+
+.pull-to-refresh-indicator.refreshing .ptr-arrow {
+  display: none;
+}
+
+.pull-to-refresh-indicator.refreshing .ptr-spinner {
+  display: block;
+}
+
+.ptr-text {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--accent-indigo);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+@keyframes ptrSpin {
+  to { transform: rotate(360deg); }
 }

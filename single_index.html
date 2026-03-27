@@ -390,6 +390,7 @@ body::before {
   white-space: nowrap;
   display: block;
   padding: 0 0.1rem;
+  min-width: 0;
 }
 
 /* Full-description tooltip that shows on hover (desktop) and
@@ -1733,13 +1734,33 @@ body::before {
 
   .model-slots-dynamic {
     flex-direction: column;
-    gap: 0.5rem
+    gap: 0.5rem;
+    min-width: 0;
+    max-width: 100vw
   }
 
   .model-slot {
     min-width: 0;
     max-width: none;
-    width: 100%
+    width: 100%;
+    overflow: hidden
+  }
+
+  .model-info-text {
+    overflow: hidden;
+    min-width: 0;
+    max-width: 100%
+  }
+
+  .model-info-desc-wrapper {
+    overflow: hidden;
+    min-width: 0
+  }
+
+  .model-info-tooltip {
+    max-width: min(320px, 90vw);
+    left: 0;
+    right: auto
   }
 
   .model-slot select,
@@ -1971,6 +1992,87 @@ body::before {
     width: 12px;
     height: 12px
   }
+}
+
+/* ─── PULL TO REFRESH (mobile) ─── */
+.pull-to-refresh-indicator {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 0;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.12), transparent);
+  transition: height 0.2s ease-out;
+  pointer-events: none;
+}
+
+.pull-to-refresh-indicator.active {
+  height: var(--pull-height, 0px);
+}
+
+.pull-to-refresh-indicator.refreshing {
+  height: 56px;
+  transition: height 0.3s ease;
+}
+
+.ptr-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.pull-to-refresh-indicator.active .ptr-content,
+.pull-to-refresh-indicator.refreshing .ptr-content {
+  opacity: 1;
+}
+
+.ptr-arrow {
+  width: 24px;
+  height: 24px;
+  color: var(--accent-indigo);
+  transition: transform 0.2s ease;
+}
+
+.pull-to-refresh-indicator.threshold .ptr-arrow {
+  transform: rotate(180deg);
+}
+
+.ptr-spinner {
+  width: 22px;
+  height: 22px;
+  border: 2.5px solid rgba(99, 102, 241, 0.2);
+  border-top-color: var(--accent-indigo);
+  border-radius: 50%;
+  animation: ptrSpin 0.7s linear infinite;
+  display: none;
+}
+
+.pull-to-refresh-indicator.refreshing .ptr-arrow {
+  display: none;
+}
+
+.pull-to-refresh-indicator.refreshing .ptr-spinner {
+  display: block;
+}
+
+.ptr-text {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--accent-indigo);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+@keyframes ptrSpin {
+  to { transform: rotate(360deg); }
 }
 </style>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -2231,6 +2333,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   bindEvents();
   loadCustomInstructions();
   configureMarked();
+  initPullToRefresh();
 
   // Close description tooltips when tapping outside (mobile)
   document.addEventListener('click', () => {
@@ -3697,6 +3800,92 @@ function configureMarked() {
     breaks: true,
     gfm: true
   });
+}
+
+// ─── PULL TO REFRESH (mobile) ───
+function initPullToRefresh() {
+  // Only enable on touch devices
+  if (!('ontouchstart' in window)) return;
+
+  // Create the indicator element
+  const indicator = document.createElement('div');
+  indicator.className = 'pull-to-refresh-indicator';
+  indicator.innerHTML = `
+    <div class="ptr-content">
+      <svg class="ptr-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="7 13 12 18 17 13"/>
+        <line x1="12" y1="6" x2="12" y2="18"/>
+      </svg>
+      <div class="ptr-spinner"></div>
+      <span class="ptr-text">Pull to refresh</span>
+    </div>
+  `;
+  document.body.prepend(indicator);
+
+  const textEl = indicator.querySelector('.ptr-text');
+  const THRESHOLD = 60; // px to pull before triggering refresh
+  const MAX_PULL = 120;
+  let startY = 0;
+  let pulling = false;
+
+  document.addEventListener('touchstart', (e) => {
+    // Only start pull if page is scrolled to the top
+    if (window.scrollY > 0) return;
+    // Don't interfere with scrollable children
+    const target = e.target;
+    if (target.closest('.panel-body, .analysis-body, textarea, .modal-body, select')) return;
+    startY = e.touches[0].clientY;
+    pulling = true;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!pulling) return;
+    const currentY = e.touches[0].clientY;
+    const diff = currentY - startY;
+
+    if (diff < 0 || window.scrollY > 0) {
+      // Scrolling up or page already scrolled — cancel
+      pulling = false;
+      indicator.classList.remove('active', 'threshold');
+      indicator.style.removeProperty('--pull-height');
+      return;
+    }
+
+    // Dampen the pull distance
+    const pullDist = Math.min(diff * 0.5, MAX_PULL);
+
+    if (pullDist > 5) {
+      e.preventDefault(); // prevent native scroll while pulling
+    }
+
+    indicator.classList.add('active');
+    indicator.style.setProperty('--pull-height', pullDist + 'px');
+
+    if (pullDist >= THRESHOLD) {
+      indicator.classList.add('threshold');
+      textEl.textContent = 'Release to refresh';
+    } else {
+      indicator.classList.remove('threshold');
+      textEl.textContent = 'Pull to refresh';
+    }
+  }, { passive: false });
+
+  document.addEventListener('touchend', () => {
+    if (!pulling) return;
+    pulling = false;
+
+    if (indicator.classList.contains('threshold')) {
+      // Trigger refresh
+      indicator.classList.remove('active', 'threshold');
+      indicator.classList.add('refreshing');
+      textEl.textContent = 'Refreshing…';
+      setTimeout(() => location.reload(), 400);
+    } else {
+      // Cancel — animate back
+      indicator.classList.remove('active', 'threshold');
+      indicator.style.removeProperty('--pull-height');
+    }
+  }, { passive: true });
 }
 
 </script>

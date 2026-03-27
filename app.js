@@ -160,6 +160,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   bindEvents();
   loadCustomInstructions();
   configureMarked();
+  initPullToRefresh();
 
   // Close description tooltips when tapping outside (mobile)
   document.addEventListener('click', () => {
@@ -1626,4 +1627,90 @@ function configureMarked() {
     breaks: true,
     gfm: true
   });
+}
+
+// ─── PULL TO REFRESH (mobile) ───
+function initPullToRefresh() {
+  // Only enable on touch devices
+  if (!('ontouchstart' in window)) return;
+
+  // Create the indicator element
+  const indicator = document.createElement('div');
+  indicator.className = 'pull-to-refresh-indicator';
+  indicator.innerHTML = `
+    <div class="ptr-content">
+      <svg class="ptr-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="7 13 12 18 17 13"/>
+        <line x1="12" y1="6" x2="12" y2="18"/>
+      </svg>
+      <div class="ptr-spinner"></div>
+      <span class="ptr-text">Pull to refresh</span>
+    </div>
+  `;
+  document.body.prepend(indicator);
+
+  const textEl = indicator.querySelector('.ptr-text');
+  const THRESHOLD = 60; // px to pull before triggering refresh
+  const MAX_PULL = 120;
+  let startY = 0;
+  let pulling = false;
+
+  document.addEventListener('touchstart', (e) => {
+    // Only start pull if page is scrolled to the top
+    if (window.scrollY > 0) return;
+    // Don't interfere with scrollable children
+    const target = e.target;
+    if (target.closest('.panel-body, .analysis-body, textarea, .modal-body, select')) return;
+    startY = e.touches[0].clientY;
+    pulling = true;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!pulling) return;
+    const currentY = e.touches[0].clientY;
+    const diff = currentY - startY;
+
+    if (diff < 0 || window.scrollY > 0) {
+      // Scrolling up or page already scrolled — cancel
+      pulling = false;
+      indicator.classList.remove('active', 'threshold');
+      indicator.style.removeProperty('--pull-height');
+      return;
+    }
+
+    // Dampen the pull distance
+    const pullDist = Math.min(diff * 0.5, MAX_PULL);
+
+    if (pullDist > 5) {
+      e.preventDefault(); // prevent native scroll while pulling
+    }
+
+    indicator.classList.add('active');
+    indicator.style.setProperty('--pull-height', pullDist + 'px');
+
+    if (pullDist >= THRESHOLD) {
+      indicator.classList.add('threshold');
+      textEl.textContent = 'Release to refresh';
+    } else {
+      indicator.classList.remove('threshold');
+      textEl.textContent = 'Pull to refresh';
+    }
+  }, { passive: false });
+
+  document.addEventListener('touchend', () => {
+    if (!pulling) return;
+    pulling = false;
+
+    if (indicator.classList.contains('threshold')) {
+      // Trigger refresh
+      indicator.classList.remove('active', 'threshold');
+      indicator.classList.add('refreshing');
+      textEl.textContent = 'Refreshing…';
+      setTimeout(() => location.reload(), 400);
+    } else {
+      // Cancel — animate back
+      indicator.classList.remove('active', 'threshold');
+      indicator.style.removeProperty('--pull-height');
+    }
+  }, { passive: true });
 }
