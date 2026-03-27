@@ -105,6 +105,7 @@ body::before {
   font-weight: 700;
   background: var(--gradient-primary);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   letter-spacing: -0.02em;
   white-space: nowrap
@@ -188,7 +189,7 @@ body::before {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
-  align-items: flex-end
+  align-items: flex-start
 }
 
 .model-slots-dynamic {
@@ -197,7 +198,7 @@ body::before {
   flex-wrap: wrap;
   flex: 1;
   min-width: 0;
-  align-items: flex-end
+  align-items: flex-start
 }
 
 .model-slot {
@@ -275,9 +276,10 @@ body::before {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  align-self: flex-end;
+  align-self: flex-start;
   flex-shrink: 0;
-  margin-bottom: 0
+  margin-bottom: 0;
+  padding-top: 1.35rem  /* align buttons with selects (label height) */
 }
 
 /* Faded slot (when "None" selected) */
@@ -332,7 +334,8 @@ body::before {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  min-width: 180px
+  min-width: 180px;
+  max-width: 320px
 }
 
 .analysis-model label {
@@ -341,6 +344,85 @@ body::before {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--accent-amber)
+}
+
+/* ─── MODEL INFO (description + cost) ─── */
+.model-info-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.68rem;
+  line-height: 1.4;
+  animation: fadeInUp 0.2s ease-out;
+  margin-top: 0.15rem;
+  max-width: 100%;
+}
+
+.model-info-costs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.model-info-cost {
+  font-weight: 600;
+  color: var(--accent-amber);
+  background: rgba(217, 119, 6, 0.08);
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+  display: inline-block;
+  white-space: nowrap;
+  width: fit-content;
+}
+
+/* ─── DESCRIPTION POPUP (mobile tap / hover) ─── */
+.model-info-desc-wrapper {
+  color: var(--text-muted);
+  cursor: help;
+  position: relative;
+  display: block;
+  max-width: 100%;
+}
+
+.model-info-desc {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  padding: 0 0.1rem;
+}
+
+/* Full-description tooltip that shows on hover (desktop) and
+   is also revealed via JS click for mobile */
+.model-info-tooltip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 500;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  padding: 0.6rem 0.8rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  width: max-content;
+  max-width: 320px;
+  white-space: normal;
+  pointer-events: none;
+  animation: fadeInUp 0.15s ease-out;
+}
+
+.model-info-desc-wrapper:hover .model-info-tooltip,
+.model-info-desc-wrapper.tooltip-open .model-info-tooltip {
+  display: block;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .prompt-input-row {
@@ -1028,6 +1110,21 @@ body::before {
   box-shadow: 0 0 6px rgba(217, 119, 6, 0.3)
 }
 
+.analysis-model-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent-amber);
+  background: rgba(217, 119, 6, 0.1);
+  border: 1px solid rgba(217, 119, 6, 0.25);
+  border-radius: 4px;
+  padding: 1px 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px
+}
+
 .analysis-body {
   padding: 1rem;
   min-height: 80px;
@@ -1217,6 +1314,77 @@ body::before {
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
   border-top: 1px solid var(--border-color)
+}
+
+/* ─── LAUNCH MODAL (provider follow-up) ─── */
+.launch-modal {
+  max-width: 620px
+}
+
+.launch-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem !important
+}
+
+.launch-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  background: rgba(99, 102, 241, 0.05);
+  border: 1px solid rgba(99, 102, 241, 0.12);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem
+}
+
+.launch-step {
+  font-size: 0.82rem;
+  color: var(--text-secondary)
+}
+
+.launch-steps kbd {
+  display: inline-block;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75em;
+  color: var(--text-primary)
+}
+
+.launch-preview-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.4rem
+}
+
+.launch-preview {
+  width: 100%;
+  min-height: 160px;
+  max-height: 300px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  padding: 0.75rem;
+  outline: none;
+  resize: vertical;
+  line-height: 1.6;
+  cursor: pointer;
+  transition: var(--transition)
+}
+
+.launch-preview:focus {
+  border-color: var(--accent-indigo);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1)
 }
 
 @keyframes fadeIn {
@@ -1903,19 +2071,11 @@ body::before {
   <script>
 // ─── CONFIGURATION ───
 const API_BASE = 'https://routellm.abacus.ai/v1';
-const MODELS = [
-  { group: '── Routing ──', models: ['route-llm'] },
-  { group: '── OpenAI ──', models: ['gpt-5.2-codex', 'gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo-2024-04-09', 'gpt-4', 'gpt-3.5-turbo'] },
-  { group: '── Anthropic ──', models: ['claude-sonnet-4-6', 'claude-opus-4-6', 'claude-sonnet-4-5-20250929', 'claude-opus-4-5-20251101', 'claude-haiku-4-5-20251001', 'claude-opus-4-1-20250805', 'claude-sonnet-4-20250514', 'claude-3-7-sonnet-20250219'] },
-  { group: '── Google ──', models: ['gemini-3.1-pro-preview', 'gemini-3-pro-preview', 'gemini-3-flash-preview', 'gemini-2.5-pro', 'gemini-2.5-flash'] },
-  { group: '── xAI ──', models: ['grok-4-0709', 'grok-4-1-fast-non-reasoning', 'grok-4-fast-non-reasoning', 'grok-code-fast-1'] },
-  { group: '── Meta ──', models: ['meta-llama/Llama-4-Maverick', 'meta-llama/Llama-3.1-405B-Turbo', 'meta-llama/Llama-3.1-8B', 'llama-3.3-70b-versatile'] },
-  { group: '── Qwen ──', models: ['qwen/qwen3-coder-480b-a35b', 'qwen3-max', 'Qwen/Qwen3-235B-A22B-Instruct', 'Qwen/Qwen3-32B', 'Qwen/QwQ-32B', 'Qwen/Qwen2.5-72B-Instruct', 'qwen-2.5-coder-32b'] },
-  { group: '── DeepSeek ──', models: ['deepseek-ai/DeepSeek-V3.2', 'deepseek/deepseek-v3.1', 'deepseek/deepseek-v3.1-Terminus', 'deepseek-ai/deepseek-R1'] },
-  { group: '── Kimi ──', models: ['kimi-k2.5', 'kimi-k2-turbo-preview'] },
-  { group: '── ZhipuAI ──', models: ['zai-org/glm-5', 'zai-org/glm-4.7', 'zai-org/glm-4.6', 'zai-org/glm-4.5'] },
-  { group: '── Other ──', models: ['openai/gpt-oss-120b'] }
-];
+const MODELS_API_URL = 'https://apps.abacus.ai/api/v0/listRouteLLMModels';
+
+// Will be populated dynamically from the API; keyed by model id for quick lookup
+let MODELS_DATA = []; // [{id, name, description, output_token_rate, input_token_rate}]
+let MODELS_BY_ID = {}; // id -> model object
 
 const DEFAULT_ANALYSIS_MODEL = 'gpt-5.2-codex';
 
@@ -1994,13 +2154,89 @@ let state = {
 //   histories: [[msgs],[msgs],[msgs]], collapsed: false,
 //   files: [{name, size, type, dataUrl, textContent}] }
 
+// ─── FETCH AVAILABLE MODELS FROM API ───
+async function fetchAvailableModels() {
+  try {
+    const headers = {};
+    const key = localStorage.getItem('abacus_api_key');
+    if (key) headers['apikey'] = key;
+    const res = await fetch(MODELS_API_URL, { headers });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    // API returns { success: true, result: [...] } or a plain array
+    const list = Array.isArray(data) ? data : (data.result || data.models || data.data || []);
+    if (list.length > 0) {
+      // Normalize: prefer display_name over name, rates are per-token (multiply by 1M for display)
+      MODELS_DATA = list.map(m => ({
+        id: m.id,
+        name: m.display_name || m.name || m.id,
+        description: m.description || '',
+        input_token_rate:  m.input_token_rate  != null ? Number(m.input_token_rate)  : null,
+        output_token_rate: m.output_token_rate != null ? Number(m.output_token_rate) : null
+      }));
+      MODELS_BY_ID = {};
+      MODELS_DATA.forEach(m => { MODELS_BY_ID[m.id] = m; });
+      return;
+    }
+    throw new Error('Empty model list from API');
+  } catch (err) {
+    console.warn('[LLM Compare] Could not fetch model list from API, using fallback.', err);
+    // Fallback: populate from hard-coded list
+    const fallback = [
+      'route-llm',
+      'gpt-5.2-codex', 'gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo-2024-04-09', 'gpt-4', 'gpt-3.5-turbo',
+      'claude-sonnet-4-6', 'claude-opus-4-6', 'claude-sonnet-4-5-20250929', 'claude-opus-4-5-20251101',
+      'claude-haiku-4-5-20251001', 'claude-opus-4-1-20250805', 'claude-sonnet-4-20250514', 'claude-3-7-sonnet-20250219',
+      'gemini-3.1-pro-preview', 'gemini-3-pro-preview', 'gemini-3-flash-preview', 'gemini-2.5-pro', 'gemini-2.5-flash',
+      'grok-4-0709', 'grok-4-1-fast-non-reasoning', 'grok-4-fast-non-reasoning', 'grok-code-fast-1',
+      'meta-llama/Llama-4-Maverick', 'meta-llama/Llama-3.1-405B-Turbo', 'meta-llama/Llama-3.1-8B', 'llama-3.3-70b-versatile',
+      'qwen/qwen3-coder-480b-a35b', 'qwen3-max', 'Qwen/Qwen3-235B-A22B-Instruct', 'Qwen/Qwen3-32B',
+      'Qwen/QwQ-32B', 'Qwen/Qwen2.5-72B-Instruct', 'qwen-2.5-coder-32b',
+      'deepseek-ai/DeepSeek-V3.2', 'deepseek/deepseek-v3.1', 'deepseek/deepseek-v3.1-Terminus', 'deepseek-ai/deepseek-R1',
+      'kimi-k2.5', 'kimi-k2-turbo-preview',
+      'zai-org/glm-5', 'zai-org/glm-4.7', 'zai-org/glm-4.6', 'zai-org/glm-4.5',
+      'openai/gpt-oss-120b'
+    ];
+    MODELS_DATA = fallback.map(id => ({ id, name: id, description: '', output_token_rate: null, input_token_rate: null }));
+    MODELS_BY_ID = {};
+    MODELS_DATA.forEach(m => { MODELS_BY_ID[m.id] = m; });
+  }
+}
+
+/** Get a model info object by id (falls back to a minimal placeholder) */
+function getModelInfo(modelId) {
+  return MODELS_BY_ID[modelId] || { id: modelId, name: modelId, description: '', output_token_rate: null, input_token_rate: null };
+}
+
+/** Format a token rate (credits per token) for display */
+function formatTokenRate(rate) {
+  if (rate == null) return '';
+  const scaled = Number(rate) * 1_000_000;
+  const formatted = Number(scaled.toPrecision(4)).toString();
+  return `${formatted} credits/token`;
+}
+
+/** Build a short cost badge string for a model */
+function modelCostBadge(modelId) {
+  const m = getModelInfo(modelId);
+  if (m.output_token_rate == null) return '';
+  return ` · out ${formatTokenRate(m.output_token_rate)}`;
+}
+
 // ─── INIT ───
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   initApiKey();
+  await fetchAvailableModels();
   populateModelSelectors();
   bindEvents();
   loadCustomInstructions();
   configureMarked();
+
+  // Close description tooltips when tapping outside (mobile)
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.model-info-desc-wrapper.tooltip-open')
+      .forEach(d => d.classList.remove('tooltip-open'));
+  });
 });
 
 function initApiKey() {
@@ -2011,6 +2247,18 @@ function initApiKey() {
   input.addEventListener('input', (e) => {
     state.apiKey = e.target.value.trim();
     localStorage.setItem('abacus_api_key', state.apiKey);
+  });
+  input.addEventListener('blur', async () => {
+    // Re-fetch and re-render if key changes so rates/models update correctly
+    await fetchAvailableModels();
+    document.querySelectorAll('.model-info-text').forEach(e => e.remove());
+    document.getElementById('modelSlotsContainer').innerHTML = '';
+    
+    // Clear the analysis model select explicitly to prevent duplicates
+    const analysisSel = document.getElementById('analysisModel');
+    if (analysisSel) analysisSel.innerHTML = '';
+    
+    populateModelSelectors();
   });
 }
 
@@ -2027,7 +2275,20 @@ function populateModelSelectors() {
   while (templateSel.firstChild) {
     analysisSel.appendChild(templateSel.firstChild);
   }
+  // Try to set value; fallback to first option if DEFAULT_ANALYSIS_MODEL isn't in the list
   analysisSel.value = DEFAULT_ANALYSIS_MODEL;
+  if (!analysisSel.value && analysisSel.options.length > 0) {
+    analysisSel.selectedIndex = 0;
+  }
+
+  // Show description below analysis model select
+  const analysisModelWrapper = analysisSel.closest('.analysis-model') || analysisSel.parentElement;
+  const analysisInfoEl = document.createElement('div');
+  analysisInfoEl.className = 'model-info-text';
+  analysisModelWrapper.appendChild(analysisInfoEl);
+  const updateAnalysisInfo = () => updateModelInfoDisplay(analysisInfoEl, analysisSel.value);
+  analysisSel.addEventListener('change', () => { saveModelConfig(); updateAnalysisInfo(); });
+  updateAnalysisInfo();
 
   // Try to load saved config from localStorage
   const savedConfig = loadModelConfig();
@@ -2036,7 +2297,10 @@ function populateModelSelectors() {
     // Restore saved model slots
     savedConfig.slots.forEach(modelValue => addModelSlot(modelValue, true));
     // Restore analysis model
-    if (savedConfig.analysisModel) analysisSel.value = savedConfig.analysisModel;
+    if (savedConfig.analysisModel) {
+      analysisSel.value = savedConfig.analysisModel;
+      updateAnalysisInfo();
+    }
   } else {
     // Create default 3 model slots
     DEFAULT_MODELS.forEach(defaultModel => addModelSlot(defaultModel, true));
@@ -2050,11 +2314,13 @@ function populateModelSelectors() {
 
   // Bind reset button
   document.getElementById('resetModelsBtn').addEventListener('click', resetModelsToDefault);
-
-  // Save analysis model changes
-  analysisSel.addEventListener('change', () => saveModelConfig());
 }
 
+/**
+ * Build a flat <select> from MODELS_DATA.
+ * Each option text shows: name + cost badge.
+ * Groups are derived from the name prefix heuristic.
+ */
 function createModelSelect(includeNone) {
   const sel = document.createElement('select');
   if (includeNone) {
@@ -2062,17 +2328,104 @@ function createModelSelect(includeNone) {
     opt.value = ''; opt.textContent = '— None —';
     sel.appendChild(opt);
   }
-  MODELS.forEach(g => {
+
+  // Group models by provider prefix
+  const groups = {};
+  MODELS_DATA.forEach(m => {
+    const grp = detectModelGroup(m.name || m.id);
+    if (!groups[grp]) groups[grp] = [];
+    groups[grp].push(m);
+  });
+
+  const groupOrder = ['Routing', 'Anthropic', 'OpenAI', 'Google', 'Meta', 'xAI', 'DeepSeek', 'Qwen', 'ZhipuAI'];
+  
+  Object.entries(groups).sort((a, b) => {
+    let idxA = groupOrder.indexOf(a[0]);
+    let idxB = groupOrder.indexOf(b[0]);
+    if (idxA === -1) idxA = 999;
+    if (idxB === -1) idxB = 999;
+    if (idxA !== idxB) return idxA - idxB;
+    return a[0].localeCompare(b[0]);
+  }).forEach(([groupName, models]) => {
     const grp = document.createElement('optgroup');
-    grp.label = g.group;
-    g.models.forEach(m => {
+    grp.label = `── ${groupName} ──`;
+    
+    // Sort models by most expensive first
+    models.sort((a, b) => {
+      const costA = a.output_token_rate != null ? Number(a.output_token_rate) : -1;
+      const costB = b.output_token_rate != null ? Number(b.output_token_rate) : -1;
+      if (costA !== costB) return costB - costA;
+      return (a.name || '').localeCompare(b.name || '');
+    }).forEach(m => {
       const opt = document.createElement('option');
-      opt.value = m; opt.textContent = m;
+      opt.value = m.id;
+      const rate = m.output_token_rate != null ? Number(m.output_token_rate) * 1_000_000 : null;
+      const costSuffix = rate != null ? ` [${Number(rate.toPrecision(4)).toString()} cr/tok]` : '';
+      opt.textContent = `${m.name}${costSuffix}`;
       grp.appendChild(opt);
     });
     sel.appendChild(grp);
   });
+
   return sel;
+}
+
+/** Heuristic: derive a group/provider name from model id/name */
+function detectModelGroup(name) {
+  const n = name.toLowerCase();
+  if (n.includes('route-llm') || n.includes('routellm')) return 'Routing';
+  if (n.includes('gpt') || n.includes('openai') || n.includes('o1') || n.includes('o3') || n.includes('codex')) return 'OpenAI';
+  if (n.includes('claude')) return 'Anthropic';
+  if (n.includes('gemini')) return 'Google';
+  if (n.includes('grok')) return 'xAI';
+  if (n.includes('llama') || n.includes('meta')) return 'Meta';
+  if (n.includes('qwen') || n.includes('qwq')) return 'Qwen';
+  if (n.includes('deepseek')) return 'DeepSeek';
+  if (n.includes('kimi') || n.includes('moonshot')) return 'Kimi';
+  if (n.includes('glm') || n.includes('zai-org') || n.includes('zhipu')) return 'ZhipuAI';
+  if (n.includes('mistral')) return 'Mistral';
+  if (n.includes('command') || n.includes('cohere')) return 'Cohere';
+  return 'Other';
+}
+
+/** Update a model-info element with description + token rate for a given model id */
+function updateModelInfoDisplay(el, modelId) {
+  if (!el) return;
+  if (!modelId) { el.innerHTML = ''; el.style.display = 'none'; return; }
+  const m = getModelInfo(modelId);
+
+  const costParts = [];
+  if (m.output_token_rate != null) costParts.push(`🪙 Out: ${formatTokenRate(m.output_token_rate)}`);
+  if (m.input_token_rate  != null) costParts.push(`In: ${formatTokenRate(m.input_token_rate)}`);
+
+  if (costParts.length === 0 && !m.description) { el.innerHTML = ''; el.style.display = 'none'; return; }
+
+  let html = '';
+  if (costParts.length > 0) {
+    html += `<div class="model-info-costs">${costParts.map(p => `<span class="model-info-cost">${escapeHtml(p)}</span>`).join('')}</div>`;
+  }
+  if (m.description) {
+    // Truncated visible text + custom hover/tap tooltip with full description
+    html += `<div class="model-info-desc-wrapper" data-full-desc="${escapeHtml(m.description)}">
+      <span class="model-info-desc">${escapeHtml(m.description)}</span>
+      <div class="model-info-tooltip">${escapeHtml(m.description)}</div>
+    </div>`;
+  }
+  el.innerHTML = html;
+  el.style.display = '';
+
+  // Tap-to-show tooltip (mobile)
+  const descWrapperEl = el.querySelector('.model-info-desc-wrapper');
+  if (descWrapperEl) {
+    descWrapperEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // Close any other open tooltips
+      document.querySelectorAll('.model-info-desc-wrapper.tooltip-open').forEach(d => {
+        if (d !== descWrapperEl) d.classList.remove('tooltip-open');
+      });
+      descWrapperEl.classList.toggle('tooltip-open');
+    });
+  }
 }
 
 function addModelSlot(defaultModel, skipSave) {
@@ -2108,18 +2461,33 @@ function addModelSlot(defaultModel, skipSave) {
 
   const sel = createModelSelect(true);
   sel.id = `model-slot-${slotId}`;
-  if (defaultModel) sel.value = defaultModel;
+  if (defaultModel) {
+    sel.value = defaultModel;
+    // If saved value not in list (e.g. old model removed), don't break
+    if (sel.value !== defaultModel) sel.selectedIndex = 0;
+  }
+
+  // Model info display below the select
+  const infoEl = document.createElement('div');
+  infoEl.className = 'model-info-text';
+  infoEl.id = `model-info-${slotId}`;
 
   // Fade behavior: when "None" is selected, fade the slot
   updateSlotFade(wrapper, sel.value);
-  sel.addEventListener('change', () => {
+  const onSelChange = () => {
     updateSlotFade(wrapper, sel.value);
+    updateModelInfoDisplay(infoEl, sel.value);
     saveModelConfig();
-  });
+  };
+  sel.addEventListener('change', onSelChange);
 
   wrapper.appendChild(label);
   wrapper.appendChild(sel);
+  wrapper.appendChild(infoEl);
   container.appendChild(wrapper);
+
+  // Initial info display
+  updateModelInfoDisplay(infoEl, sel.value);
 
   updateSlotLabels();
   if (!skipSave) saveModelConfig();
@@ -2535,7 +2903,7 @@ function buildRoundDOM(roundIdx, prompt, isInitial, models, files = []) {
             <div class="panel-header">
               <div class="panel-header-left">
                 <div class="panel-indicator" style="background: ${color.css}; box-shadow: 0 0 6px ${color.shadow}"></div>
-                <span class="panel-title">${escapeHtml(modelObj.model)}</span>
+                <span class="panel-title" id="ptitle-${roundIdx}-${index}">${escapeHtml(modelObj.model)}</span>
               </div>
               <div class="panel-actions">
                 <button class="btn-expand" title="Expand" onclick="toggleExpandPanel(${roundIdx},${index})">
@@ -2554,7 +2922,8 @@ function buildRoundDOM(roundIdx, prompt, isInitial, models, files = []) {
               <div class="panel-status"><div class="loading-dots"><span></span><span></span><span></span></div></div>
             </div>
             <div class="panel-footer" id="footer-${roundIdx}-${index}" style="display:none"></div>
-            ${provider ? `<div class="panel-followup-bar">
+            <div id="fbar-container-${roundIdx}-${index}">
+              ${provider ? `<div class="panel-followup-bar">
                 <button class="btn-followup" title="Copy prompt and open ${provider.name}" onclick="followUpReask(${roundIdx},${index})">
                   ${provider.icon} Re-ask on ${provider.name}
                 </button>
@@ -2562,6 +2931,7 @@ function buildRoundDOM(roundIdx, prompt, isInitial, models, files = []) {
                   📋→${provider.icon} Follow up with context
                 </button>
               </div>` : ''}
+            </div>
           </div>
           ${!isLast && models.length > 1 ? `<div class="resize-handle" id="handle-${roundIdx}-${index}"></div>` : ''}
         `;}).join('')}
@@ -2571,6 +2941,7 @@ function buildRoundDOM(roundIdx, prompt, isInitial, models, files = []) {
           <div class="analysis-header-left">
             <div class="analysis-indicator"></div>
             <span class="panel-title">Comparative Analysis</span>
+            <span class="analysis-model-badge" id="abadge-${roundIdx}" style="display:none"></span>
           </div>
           <div class="panel-actions">
             <button class="btn-icon" title="Copy analysis" onclick="copyAnalysis(${roundIdx})">📋</button>
@@ -2648,6 +3019,30 @@ async function streamCompletion(model, messages, roundIdx, panelIndex) {
         if (data === '[DONE]') continue;
         try {
           const parsed = JSON.parse(data);
+          
+          if (parsed.model && model === 'route-llm') {
+            const titleEl = document.getElementById(`ptitle-${roundIdx}-${panelIndex}`);
+            if (titleEl && !titleEl.textContent.includes('→')) {
+              const newTitle = `route-llm → ${parsed.model}`;
+              titleEl.textContent = newTitle;
+              state.rounds[roundIdx].responseModels[panelIndex] = newTitle;
+              
+              // Dynamically show followup re-ask buttons if a known provider was matched
+              const actualProvider = getModelProvider(parsed.model);
+              const fbarContainer = document.getElementById(`fbar-container-${roundIdx}-${panelIndex}`);
+              if (actualProvider && fbarContainer && !fbarContainer.innerHTML.trim()) {
+                fbarContainer.innerHTML = `<div class="panel-followup-bar">
+                  <button class="btn-followup" title="Copy prompt and open ${actualProvider.name}" onclick="followUpReask(${roundIdx},${panelIndex})">
+                    ${actualProvider.icon} Re-ask on ${actualProvider.name}
+                  </button>
+                  <button class="btn-followup btn-followup-ctx" title="Copy prompt + response and open ${actualProvider.name}" onclick="followUpWithContext(${roundIdx},${panelIndex})">
+                    📋→${actualProvider.icon} Follow up with context
+                  </button>
+                </div>`;
+              }
+            }
+          }
+
           const delta = parsed.choices?.[0]?.delta?.content;
           if (delta) {
             fullText += delta;
@@ -2681,7 +3076,14 @@ async function streamCompletion(model, messages, roundIdx, panelIndex) {
 async function runAnalysis(roundIdx, prompt, responses) {
   const analysisModel = document.getElementById('analysisModel').value;
   const analysisBody = document.getElementById(`abody-${roundIdx}`);
+  const analysisBadge = document.getElementById(`abadge-${roundIdx}`);
   analysisBody.innerHTML = '<div class="panel-status"><div class="loading-dots"><span></span><span></span><span></span></div>&nbsp; Analyzing…</div>';
+
+  // Show initial badge with the selected model name
+  if (analysisBadge) {
+    analysisBadge.textContent = analysisModel;
+    analysisBadge.style.display = '';
+  }
 
   // For follow-ups, build full conversation context
   let userMessage;
@@ -2741,6 +3143,15 @@ async function runAnalysis(roundIdx, prompt, responses) {
         if (data === '[DONE]') continue;
         try {
           const parsed = JSON.parse(data);
+
+          // If route-llm was used, update the badge once the actual model is revealed
+          if (parsed.model && analysisModel === 'route-llm' && analysisBadge) {
+            if (!analysisBadge.textContent.includes('→')) {
+              analysisBadge.textContent = `route-llm → ${parsed.model}`;
+              state.rounds[roundIdx].analysisResolvedModel = parsed.model;
+            }
+          }
+
           const delta = parsed.choices?.[0]?.delta?.content;
           if (delta) {
             fullText += delta;
@@ -2960,7 +3371,7 @@ function followUpReask(roundIdx, panelIndex) {
   const provider = getModelProvider(modelName);
   if (!provider) return showToast('No web interface for this model', 'error');
 
-  // Build the prompt text from the full conversation
+  // Build the prompt from ALL rounds up to and including this one
   let promptText = '';
   for (let r = 0; r <= roundIdx; r++) {
     if (r === 0) {
@@ -2970,11 +3381,11 @@ function followUpReask(roundIdx, panelIndex) {
     }
   }
 
-  navigator.clipboard.writeText(promptText).then(() => {
-    showToast(`Prompt copied! Opening ${provider.name}…`, 'success');
-    window.open(provider.url, '_blank');
-  }).catch(() => {
-    showToast('Failed to copy to clipboard', 'error');
+  showLaunchModal({
+    provider,
+    text: promptText,
+    title: `${provider.icon} Re-ask on ${provider.name}`,
+    description: `This is the original prompt${roundIdx > 0 ? ' (plus any follow-ups)' : ''}. It will be copied to your clipboard — just paste it into ${provider.name}.`
   });
 }
 
@@ -2985,7 +3396,7 @@ function followUpWithContext(roundIdx, panelIndex) {
   const provider = getModelProvider(modelName);
   if (!provider) return showToast('No web interface for this model', 'error');
 
-  // Build full context: prompt + this model's response
+  // Build full context: all prompts + this model's responses for every round
   let contextText = '';
   for (let r = 0; r <= roundIdx; r++) {
     const round = state.rounds[r];
@@ -2998,14 +3409,74 @@ function followUpWithContext(roundIdx, panelIndex) {
       contextText += `\n\n${modelName}'s response:\n${round.responses[panelIndex]}`;
     }
   }
-  contextText += '\n\n---\nI\'d like to follow up on the above. ';
+  contextText += '\n\n---\nI\'d like to continue this conversation. ';
 
-  navigator.clipboard.writeText(contextText).then(() => {
-    showToast(`Prompt + response copied! Opening ${provider.name}…`, 'success');
-    window.open(provider.url, '_blank');
-  }).catch(() => {
-    showToast('Failed to copy to clipboard', 'error');
+  showLaunchModal({
+    provider,
+    text: contextText,
+    title: `📋→${provider.icon} Follow up with context on ${provider.name}`,
+    description: `This includes the full conversation with ${modelName}'s response. It will be copied to your clipboard — paste it into ${provider.name} to continue with full context.`
   });
+}
+
+// ─── LAUNCH MODAL ───
+function showLaunchModal({ provider, text, title, description }) {
+  // Remove any existing modal
+  const existing = document.getElementById('launchModal');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'launchModal';
+  overlay.innerHTML = `
+    <div class="modal launch-modal">
+      <div class="modal-header">
+        <h2>${escapeHtml(title)}</h2>
+        <button class="btn-icon" onclick="closeLaunchModal()" title="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="launch-desc">${escapeHtml(description)}</p>
+        <div class="launch-steps">
+          <span class="launch-step">1️⃣ Click <strong>Copy &amp; Open</strong> below</span>
+          <span class="launch-step">2️⃣ ${provider.name} opens in a new tab</span>
+          <span class="launch-step">3️⃣ Paste into the chat box (<kbd>⌘V</kbd> / <kbd>Ctrl+V</kbd>)</span>
+        </div>
+        <label class="launch-preview-label">Text that will be copied:</label>
+        <textarea class="launch-preview" id="launchPreviewText" readonly>${escapeHtml(text)}</textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeLaunchModal()">Cancel</button>
+        <button class="btn btn-primary" id="launchCopyOpenBtn">
+          📋 Copy &amp; Open ${escapeHtml(provider.name)}
+        </button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeLaunchModal(); });
+
+  // Wire copy & open button
+  document.getElementById('launchCopyOpenBtn').addEventListener('click', () => {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast(`Copied! Paste into ${provider.name}`, 'success');
+      window.open(provider.url, '_blank');
+      closeLaunchModal();
+    }).catch(() => {
+      // Fallback: select the textarea so user can manually copy
+      const ta = document.getElementById('launchPreviewText');
+      ta.select();
+      showToast('Auto-copy failed — text selected, press Ctrl+C / ⌘C to copy', 'error');
+    });
+  });
+
+  // Auto-select the preview textarea on click
+  const ta = document.getElementById('launchPreviewText');
+  ta.addEventListener('click', () => ta.select());
+}
+
+function closeLaunchModal() {
+  const m = document.getElementById('launchModal');
+  if (m) m.remove();
 }
 
 async function savePanelMd(roundIdx, panelIndex) {
@@ -3039,7 +3510,8 @@ function buildRoundMd(roundIdx) {
   let md = `## ${roundIdx === 0 ? 'Initial Query' : `Follow-up #${roundIdx}`}\n\n**Prompt:** ${rd.prompt}\n\n---\n`;
   state.activeModels.forEach(({ index, model }) => {
     if (rd.responses[index]) {
-      md += `\n### ${model}\n\n${rd.responses[index]}\n\n---\n`;
+      const actualModel = rd.responseModels[index] || model;
+      md += `\n### ${actualModel}\n\n${rd.responses[index]}\n\n---\n`;
     }
   });
   if (rd.analysis) md += `\n### Comparative Analysis\n\n${rd.analysis}\n\n---\n`;
@@ -3061,7 +3533,11 @@ async function saveRound(roundIdx) {
 // ─── SAVE/COPY ENTIRE CONVERSATION ───
 function buildFullConversationMd() {
   let md = `# LLM Comparison Report\n\n**Date:** ${new Date().toLocaleString()}\n\n`;
-  md += `**Models:** ${state.activeModels.map(m => m.model).join(', ')}\n\n`;
+  const latestRound = state.rounds[state.rounds.length - 1];
+  const modelNames = latestRound 
+    ? state.activeModels.map(m => latestRound.responseModels[m.index] || m.model)
+    : state.activeModels.map(m => m.model);
+  md += `**Models:** ${modelNames.join(', ')}\n\n`;
   md += `**Analysis Model:** ${document.getElementById('analysisModel').value}\n\n---\n`;
   state.rounds.forEach((rd, i) => { md += '\n' + buildRoundMd(i); });
   return md;
