@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Client — Basic Example</title>
+  <meta name="description" content="Basic example of using the LLM Client library to query AI models from any web app." />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    /* ─── DESIGN SYSTEM ─── */
+    :root {
+      --bg-base: #0b1120;
+      --bg-surface: #111827;
+      --bg-elevated: #1e293b;
+      --border: rgba(148,163,184,0.12);
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent: #6366f1;
+      --accent-glow: rgba(99,102,241,0.25);
+      --success: #22c55e;
+      --error: #ef4444;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg-base);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+    }
+
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    /* ─── LAYOUT ─── */
+    .container {
+      max-width: 800px;
+      width: 100%;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #6366f1, #a78bfa, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+    .subtitle {
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+      font-size: 0.95rem;
+    }
+
+    /* ─── CARDS ─── */
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      transition: border-color 0.3s;
+    }
+    .card:hover { border-color: rgba(99,102,241,0.3); }
+
+    .card-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    /* ─── FORM ELEMENTS ─── */
+    .input-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .input-group:last-child { margin-bottom: 0; }
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      min-width: 85px;
+    }
+
+    input, select, textarea {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--text);
+      font-size: 0.9rem;
+      font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    /* ─── BUTTONS ─── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 20px;
+      border-radius: var(--radius-sm);
+      border: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #6366f1, #7c3aed);
+      color: white;
+      box-shadow: 0 4px 16px rgba(99,102,241,0.35);
+    }
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(99,102,241,0.45);
+    }
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover {
+      background: var(--bg-elevated);
+      color: var(--text);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 1rem;
+    }
+
+    /* ─── RESPONSE ─── */
+    .response-area {
+      min-height: 100px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      padding: 1.25rem;
+      font-size: 0.92rem;
+      line-height: 1.7;
+      overflow-y: auto;
+      max-height: 500px;
+      transition: border-color 0.3s;
+    }
+    .response-area.streaming { border-color: var(--accent); }
+
+    .response-area .placeholder {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* ─── USAGE BADGE ─── */
+    .usage-bar {
+      display: none;
+      gap: 1rem;
+      padding: 0.75rem 1rem;
+      background: rgba(99,102,241,0.08);
+      border-radius: var(--radius-sm);
+      margin-top: 0.75rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .usage-bar.visible { display: flex; flex-wrap: wrap; }
+    .usage-item span { color: var(--text); font-weight: 600; margin-left: 4px; }
+
+    /* ─── LOADING DOTS ─── */
+    .loading-dots {
+      display: inline-flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .loading-dots span {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent); display: inline-block;
+      animation: dot-bounce 1.4s ease-in-out infinite both;
+    }
+    .loading-dots span:nth-child(2) { animation-delay: 0.16s; }
+    .loading-dots span:nth-child(3) { animation-delay: 0.32s; }
+
+    @keyframes dot-bounce {
+      0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    /* ─── MARKDOWN ─── */
+    .response-area h1, .response-area h2, .response-area h3 {
+      margin: 1em 0 0.5em;
+      color: var(--text);
+    }
+    .response-area h1 { font-size: 1.3rem; }
+    .response-area h2 { font-size: 1.15rem; }
+    .response-area h3 { font-size: 1rem; }
+
+    .response-area code {
+      background: rgba(99,102,241,0.12);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.85em;
+    }
+    .response-area pre {
+      background: rgba(0,0,0,0.4);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      overflow-x: auto;
+      margin: 1em 0;
+    }
+    .response-area pre code {
+      background: none;
+      padding: 0;
+    }
+    .response-area ul, .response-area ol {
+      padding-left: 1.5em;
+      margin: 0.5em 0;
+    }
+    .response-area blockquote {
+      border-left: 3px solid var(--accent);
+      padding-left: 1em;
+      color: var(--text-muted);
+      margin: 0.5em 0;
+    }
+    .response-area table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1em 0;
+    }
+    .response-area th, .response-area td {
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      text-align: left;
+    }
+    .response-area th {
+      background: rgba(99,102,241,0.08);
+    }
+
+    /* ─── FOOTER ─── */
+    .footer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+    .footer a { color: var(--accent); text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🧠 LLM Chat — Basic Example</h1>
+  <p class="subtitle">A minimal integration showing streaming responses, API key persistence, and markdown rendering.</p>
+
+  <!-- CONFIGURATION -->
+  <div class="card">
+    <div class="card-title">⚙️ Configuration</div>
+    <div class="input-group">
+      <label for="apiKey">API Key</label>
+      <input type="password" id="apiKey" placeholder="sk-..." autocomplete="off" />
+    </div>
+    <div class="input-group">
+      <label for="model">Model</label>
+      <select id="model"></select>
+    </div>
+  </div>
+
+  <!-- PROMPT -->
+  <div class="card">
+    <div class="card-title">💬 Your Question</div>
+    <textarea id="prompt" placeholder="Ask anything... (Ctrl+Enter to send)"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="sendBtn">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/>
+        </svg>
+        Send (Streaming)
+      </button>
+      <button class="btn btn-ghost" id="stopBtn" style="display:none">⏹ Stop</button>
+    </div>
+  </div>
+
+  <!-- RESPONSE -->
+  <div class="card">
+    <div class="card-title">📝 Response</div>
+    <div class="response-area" id="responseArea">
+      <span class="placeholder">Response will appear here…</span>
+    </div>
+    <div class="usage-bar" id="usageBar">
+      <span>In: <span id="usageIn">-</span></span>
+      <span>Out: <span id="usageOut">-</span></span>
+      <span>Total: <span id="usageTotal">-</span></span>
+    </div>
+  </div>
+
+  <div class="footer">
+    Powered by <a href="https://abacus.ai" target="_blank">Abacus AI RouteLLM</a> •
+    Built with <code>llm-client.js</code>
+  </div>
+</div>
+
+<script type="module">
+  import { LLMClient, setupMarkdown } from './llm-client.js';
+
+  // ── Initialize ──
+  const client = new LLMClient({ provider: 'abacus' });
+  setupMarkdown();
+
+  // ── Populate UI ──
+  const apiKeyInput = document.getElementById('apiKey');
+  const modelSelect = document.getElementById('model');
+  const promptInput = document.getElementById('prompt');
+  const sendBtn = document.getElementById('sendBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const responseArea = document.getElementById('responseArea');
+  const usageBar = document.getElementById('usageBar');
+
+  // Load saved API key
+  apiKeyInput.value = client.apiKey;
+  apiKeyInput.addEventListener('input', (e) => {
+    client.apiKey = e.target.value;
+  });
+
+  // Populate model dropdown
+  for (const model of client.availableModels) {
+    const opt = document.createElement('option');
+    opt.value = model;
+    opt.textContent = model;
+    modelSelect.appendChild(opt);
+  }
+  modelSelect.value = client.defaultModel;
+
+  // ── Send ──
+  let activeStream = null;
+
+  async function handleSend() {
+    const prompt = promptInput.value.trim();
+    if (!prompt) return;
+    if (!client.hasApiKey) {
+      alert('Please enter your API key');
+      return;
+    }
+
+    const model = modelSelect.value;
+    responseArea.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div> Thinking…';
+    responseArea.classList.add('streaming');
+    sendBtn.disabled = true;
+    stopBtn.style.display = '';
+    usageBar.classList.remove('visible');
+
+    activeStream = client.stream({
+      model,
+      messages: [{ role: 'user', content: prompt }],
+      onToken: (token, fullText) => {
+        responseArea.innerHTML = marked.parse(fullText);
+        responseArea.scrollTop = responseArea.scrollHeight;
+      },
+      onUsage: (usage) => {
+        document.getElementById('usageIn').textContent = usage.prompt_tokens?.toLocaleString() || '-';
+        document.getElementById('usageOut').textContent = usage.completion_tokens?.toLocaleString() || '-';
+        document.getElementById('usageTotal').textContent = usage.total_tokens?.toLocaleString() || '-';
+        usageBar.classList.add('visible');
+      },
+      onDone: () => {
+        responseArea.classList.remove('streaming');
+        sendBtn.disabled = false;
+        stopBtn.style.display = 'none';
+        activeStream = null;
+      },
+      onError: (err) => {
+        responseArea.innerHTML = `<span style="color:var(--error)">⚠️ ${err.message}</span>`;
+        responseArea.classList.remove('streaming');
+        sendBtn.disabled = false;
+        stopBtn.style.display = 'none';
+        activeStream = null;
+      }
+    });
+  }
+
+  sendBtn.addEventListener('click', handleSend);
+  promptInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSend();
+  });
+  stopBtn.addEventListener('click', () => {
+    if (activeStream) activeStream.abort();
+  });
+</script>
+
+</body>
+</html>

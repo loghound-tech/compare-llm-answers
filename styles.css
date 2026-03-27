@@ -95,6 +95,7 @@ body::before {
   font-weight: 700;
   background: var(--gradient-primary);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   letter-spacing: -0.02em;
   white-space: nowrap
@@ -178,7 +179,7 @@ body::before {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
-  align-items: flex-end
+  align-items: flex-start
 }
 
 .model-slots-dynamic {
@@ -187,7 +188,7 @@ body::before {
   flex-wrap: wrap;
   flex: 1;
   min-width: 0;
-  align-items: flex-end
+  align-items: flex-start
 }
 
 .model-slot {
@@ -265,9 +266,10 @@ body::before {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  align-self: flex-end;
+  align-self: flex-start;
   flex-shrink: 0;
-  margin-bottom: 0
+  margin-bottom: 0;
+  padding-top: 1.35rem  /* align buttons with selects (label height) */
 }
 
 /* Faded slot (when "None" selected) */
@@ -322,7 +324,8 @@ body::before {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  min-width: 180px
+  min-width: 180px;
+  max-width: 320px
 }
 
 .analysis-model label {
@@ -331,6 +334,85 @@ body::before {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--accent-amber)
+}
+
+/* ─── MODEL INFO (description + cost) ─── */
+.model-info-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.68rem;
+  line-height: 1.4;
+  animation: fadeInUp 0.2s ease-out;
+  margin-top: 0.15rem;
+  max-width: 100%;
+}
+
+.model-info-costs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.model-info-cost {
+  font-weight: 600;
+  color: var(--accent-amber);
+  background: rgba(217, 119, 6, 0.08);
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+  display: inline-block;
+  white-space: nowrap;
+  width: fit-content;
+}
+
+/* ─── DESCRIPTION POPUP (mobile tap / hover) ─── */
+.model-info-desc-wrapper {
+  color: var(--text-muted);
+  cursor: help;
+  position: relative;
+  display: block;
+  max-width: 100%;
+}
+
+.model-info-desc {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  padding: 0 0.1rem;
+}
+
+/* Full-description tooltip that shows on hover (desktop) and
+   is also revealed via JS click for mobile */
+.model-info-tooltip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 500;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  padding: 0.6rem 0.8rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  width: max-content;
+  max-width: 320px;
+  white-space: normal;
+  pointer-events: none;
+  animation: fadeInUp 0.15s ease-out;
+}
+
+.model-info-desc-wrapper:hover .model-info-tooltip,
+.model-info-desc-wrapper.tooltip-open .model-info-tooltip {
+  display: block;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .prompt-input-row {
@@ -1018,6 +1100,21 @@ body::before {
   box-shadow: 0 0 6px rgba(217, 119, 6, 0.3)
 }
 
+.analysis-model-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent-amber);
+  background: rgba(217, 119, 6, 0.1);
+  border: 1px solid rgba(217, 119, 6, 0.25);
+  border-radius: 4px;
+  padding: 1px 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px
+}
+
 .analysis-body {
   padding: 1rem;
   min-height: 80px;
@@ -1207,6 +1304,77 @@ body::before {
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
   border-top: 1px solid var(--border-color)
+}
+
+/* ─── LAUNCH MODAL (provider follow-up) ─── */
+.launch-modal {
+  max-width: 620px
+}
+
+.launch-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem !important
+}
+
+.launch-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  background: rgba(99, 102, 241, 0.05);
+  border: 1px solid rgba(99, 102, 241, 0.12);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem
+}
+
+.launch-step {
+  font-size: 0.82rem;
+  color: var(--text-secondary)
+}
+
+.launch-steps kbd {
+  display: inline-block;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75em;
+  color: var(--text-primary)
+}
+
+.launch-preview-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.4rem
+}
+
+.launch-preview {
+  width: 100%;
+  min-height: 160px;
+  max-height: 300px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  padding: 0.75rem;
+  outline: none;
+  resize: vertical;
+  line-height: 1.6;
+  cursor: pointer;
+  transition: var(--transition)
+}
+
+.launch-preview:focus {
+  border-color: var(--accent-indigo);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1)
 }
 
 @keyframes fadeIn {
@@ -1476,8 +1644,8 @@ body::before {
   }
 }
 
-/* ─── RESPONSIVE ─── */
-@media(max-width:900px) {
+/* ─── RESPONSIVE: TABLET (≤ 900px) ─── */
+@media (max-width: 900px) {
   .responses-grid {
     flex-direction: column
   }
@@ -1501,5 +1669,296 @@ body::before {
   .app-header {
     flex-direction: column;
     align-items: flex-start
+  }
+}
+
+/* ─── RESPONSIVE: PHONE (≤ 600px) ─── */
+@media (max-width: 600px) {
+  html {
+    font-size: 14px
+  }
+
+  /* ─ Header ─ */
+  .app-header {
+    padding: 0.5rem 0.75rem;
+    gap: 0.5rem
+  }
+
+  .app-logo h1 {
+    font-size: 1rem
+  }
+
+  .header-controls {
+    width: 100%;
+    gap: 0.5rem
+  }
+
+  #instructionsBtn {
+    font-size: 0.7rem !important;
+    padding: 0.35rem 0.5rem !important
+  }
+
+  /* ─ API Key ─ */
+  .api-key-group {
+    flex: 1;
+    min-width: 0
+  }
+
+  .api-key-group input {
+    width: 100%;
+    min-width: 0
+  }
+
+  /* ─ Main body ─ */
+  .app-main {
+    padding: 0.75rem 0.5rem
+  }
+
+  /* ─ Prompt section ─ */
+  .prompt-section {
+    padding: 0.75rem;
+    gap: 0.75rem;
+    border-radius: var(--radius-md)
+  }
+
+  .model-slots-dynamic {
+    flex-direction: column;
+    gap: 0.5rem
+  }
+
+  .model-slot {
+    min-width: 0;
+    max-width: none;
+    width: 100%
+  }
+
+  .model-slot select,
+  .analysis-model select {
+    font-size: 0.82rem;
+    padding: 0.45rem 0.6rem
+  }
+
+  .model-slot-actions {
+    flex-direction: row;
+    align-self: stretch;
+    gap: 0.5rem
+  }
+
+  .model-slot-actions .btn {
+    flex: 1
+  }
+
+  .analysis-model {
+    min-width: 0;
+    width: 100%
+  }
+
+  /* ─ Prompt input ─ */
+  .prompt-input-row {
+    flex-direction: column;
+    gap: 0.5rem
+  }
+
+  .prompt-input-wrapper {
+    width: 100%
+  }
+
+  .prompt-input-wrapper textarea {
+    font-size: 0.9rem;
+    padding: 0.6rem 0.75rem;
+    min-height: 50px
+  }
+
+  .prompt-actions {
+    width: 100%;
+    justify-content: flex-end
+  }
+
+  /* ─ Responses grid ─ */
+  .responses-grid {
+    padding: 0.5rem;
+    gap: 0.5rem;
+    min-height: auto
+  }
+
+  .response-panel {
+    min-height: 150px
+  }
+
+  .panel-header {
+    padding: 0.4rem 0.6rem
+  }
+
+  .panel-title {
+    font-size: 0.7rem
+  }
+
+  .panel-body {
+    padding: 0.6rem;
+    font-size: 0.82rem
+  }
+
+  .panel-footer {
+    padding: 0.3rem 0.6rem;
+    gap: 0.4rem;
+    font-size: 0.6rem;
+    flex-wrap: wrap
+  }
+
+  /* ─ Panel followup bar ─ */
+  .panel-followup-bar {
+    padding: 0.3rem 0.5rem;
+    gap: 0.25rem
+  }
+
+  .btn-followup {
+    font-size: 0.62rem;
+    padding: 0.15rem 0.35rem
+  }
+
+  /* ─ Analysis ─ */
+  .analysis-header {
+    padding: 0.4rem 0.75rem
+  }
+
+  .analysis-body {
+    padding: 0.75rem;
+    font-size: 0.82rem;
+    max-height: 300px
+  }
+
+  .analysis-footer {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.6rem;
+    flex-wrap: wrap
+  }
+
+  /* ─ Round header ─ */
+  .round-header {
+    padding: 0.5rem 0.75rem
+  }
+
+  .round-badge {
+    font-size: 0.6rem;
+    padding: 0.15rem 0.4rem
+  }
+
+  .round-prompt-preview {
+    font-size: 0.72rem;
+    max-width: 140px
+  }
+
+  .round-file-badge {
+    font-size: 0.6rem
+  }
+
+  /* ─ Follow-up area ─ */
+  .followup-area {
+    padding: 0.5rem 0.75rem;
+    flex-direction: column;
+    align-items: stretch
+  }
+
+  .followup-area textarea {
+    width: 100%;
+    font-size: 0.82rem
+  }
+
+  .followup-area .btn {
+    align-self: flex-end
+  }
+
+  /* ─ Save all bar ─ */
+  .save-all-bar {
+    flex-direction: column;
+    gap: 0.4rem
+  }
+
+  .save-all-bar .btn {
+    width: 100%;
+    justify-content: center
+  }
+
+  /* ─ Modal ─ */
+  .modal {
+    width: 95%;
+    max-height: 90vh
+  }
+
+  .modal-header {
+    padding: 0.75rem 1rem
+  }
+
+  .modal-body {
+    padding: 0.75rem
+  }
+
+  .modal-body textarea {
+    min-height: 180px;
+    font-size: 0.8rem
+  }
+
+  .modal-footer {
+    padding: 0.6rem 1rem
+  }
+
+  /* ─ Toast ─ */
+  .toast {
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: 0.75rem
+  }
+
+  /* ─ Markdown content ─ */
+  .markdown-content h1 { font-size: 1.15rem }
+  .markdown-content h2 { font-size: 1rem }
+  .markdown-content h3 { font-size: 0.9rem }
+  .markdown-content h4 { font-size: 0.82rem }
+
+  .markdown-content pre {
+    padding: 0.5rem;
+    font-size: 0.78rem
+  }
+
+  .markdown-content pre code {
+    font-size: 0.75rem
+  }
+
+  .markdown-content table {
+    font-size: 0.75rem;
+    display: block;
+    overflow-x: auto
+  }
+
+  /* ─ Slot remove button always visible on touch ─ */
+  .slot-remove-btn {
+    opacity: 0.6
+  }
+
+  /* ─ Buttons ─ */
+  .btn {
+    font-size: 0.8rem;
+    padding: 0.5rem 1rem
+  }
+
+  .btn-ghost {
+    font-size: 0.72rem;
+    padding: 0.35rem 0.6rem
+  }
+
+  .btn-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 0.82rem
+  }
+
+  .btn-expand {
+    width: 28px;
+    height: 28px
+  }
+
+  .btn-expand svg {
+    width: 12px;
+    height: 12px
   }
 }

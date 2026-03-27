@@ -1,10 +1,1921 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Compare — Multi-Model AI Answer Comparison</title>
+  <meta name="description"
+    content="Compare answers from multiple AI language models side-by-side with intelligent analysis and follow-up conversations." />
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg-primary: #f0f2f5;
+  --bg-secondary: #ffffff;
+  --bg-card: rgba(255, 255, 255, 0.85);
+  --bg-glass: rgba(255, 255, 255, 0.6);
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-glow: rgba(99, 102, 241, 0.35);
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --accent-indigo: #6366f1;
+  --accent-violet: #8b5cf6;
+  --accent-cyan: #0891b2;
+  --accent-emerald: #059669;
+  --accent-amber: #d97706;
+  --accent-rose: #e11d48;
+  --gradient-primary: linear-gradient(135deg, #6366f1, #8b5cf6);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.08);
+  --shadow-glow: 0 0 16px rgba(99, 102, 241, 0.12);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0
+}
+
+html {
+  font-size: 15px;
+  scroll-behavior: smooth
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 10%, rgba(99, 102, 241, 0.06), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 90%, rgba(139, 92, 246, 0.04), transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── HEADER ─── */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(20px) saturate(1.5);
+  background: rgba(255, 255, 255, 0.8);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.app-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0
+}
+
+.app-logo svg {
+  width: 28px;
+  height: 28px
+}
+
+.app-logo h1 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.02em;
+  white-space: nowrap
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end
+}
+
+/* ─── API KEY ─── */
+.api-key-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.35rem 0.75rem;
+  transition: var(--transition);
+  box-shadow: var(--shadow-sm)
+}
+
+.api-key-group:focus-within {
+  border-color: var(--border-glow);
+  box-shadow: var(--shadow-glow)
+}
+
+.api-key-group label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap
+}
+
+.api-key-group input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  width: 200px
+}
+
+.api-key-group input::placeholder {
+  color: var(--text-muted)
+}
+
+/* ─── MAIN ─── */
+.app-main {
+  position: relative;
+  z-index: 1;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin: 0 auto;
+  width: 100%
+}
+
+/* ─── PROMPT SECTION ─── */
+.prompt-section {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: var(--shadow-md)
+}
+
+.model-selectors {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: flex-end
+}
+
+.model-slots-dynamic {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+  align-items: flex-end
+}
+
+.model-slot {
+  flex: 1;
+  min-width: 160px;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem
+}
+
+.model-slot label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem
+}
+
+.model-slot label .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0
+}
+
+.slot-remove-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  cursor: pointer;
+  padding: 0 0.15rem;
+  border-radius: 3px;
+  line-height: 1;
+  opacity: 0;
+  transition: var(--transition);
+  margin-left: auto
+}
+
+.model-slot:hover .slot-remove-btn {
+  opacity: 0.6
+}
+
+.slot-remove-btn:hover {
+  opacity: 1 !important;
+  color: var(--accent-rose);
+  background: rgba(225, 29, 72, 0.08)
+}
+
+.btn-add-model {
+  font-size: 0.78rem !important;
+  padding: 0.45rem 0.7rem !important;
+  white-space: nowrap;
+  flex-shrink: 0
+}
+
+.btn-reset-models {
+  font-size: 0.7rem !important;
+  padding: 0.35rem 0.6rem !important;
+  white-space: nowrap;
+  flex-shrink: 0;
+  color: var(--text-muted) !important
+}
+
+.btn-reset-models:hover {
+  color: var(--accent-rose) !important
+}
+
+.model-slot-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-self: flex-end;
+  flex-shrink: 0;
+  margin-bottom: 0
+}
+
+/* Faded slot (when "None" selected) */
+.model-slot.slot-faded select {
+  opacity: 0.35;
+  transition: opacity 0.3s ease
+}
+
+.model-slot.slot-faded label {
+  opacity: 0.45;
+  transition: opacity 0.3s ease
+}
+
+.model-slot.slot-faded:hover select,
+.model-slot.slot-faded:hover label {
+  opacity: 0.7
+}
+
+.model-slot select,
+.analysis-model select {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.75rem;
+  outline: none;
+  cursor: pointer;
+  transition: var(--transition);
+  width: 100%;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2rem;
+  box-shadow: var(--shadow-sm)
+}
+
+.model-slot select:hover,
+.analysis-model select:hover {
+  border-color: var(--border-glow)
+}
+
+.model-slot select:focus,
+.analysis-model select:focus {
+  border-color: var(--accent-indigo);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1)
+}
+
+.analysis-model {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 180px
+}
+
+.analysis-model label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-amber)
+}
+
+.prompt-input-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end
+}
+
+/* ─── PROMPT INPUT WRAPPER (drop zone) ─── */
+.prompt-input-wrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden
+}
+
+.prompt-input-wrapper:focus-within {
+  border-color: var(--accent-indigo);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1)
+}
+
+.prompt-input-wrapper.drag-over {
+  border-color: var(--accent-indigo);
+  border-style: dashed;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), 0 0 20px rgba(99, 102, 241, 0.1)
+}
+
+.prompt-input-wrapper textarea {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  padding: 0.75rem 1rem;
+  resize: vertical;
+  min-height: 60px;
+  max-height: 200px;
+  outline: none;
+  line-height: 1.5;
+  width: 100%
+}
+
+.prompt-input-wrapper textarea::placeholder {
+  color: var(--text-muted)
+}
+
+/* ─── ATTACHED FILES ─── */
+.attached-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0 0.75rem 0.5rem;
+  min-height: 0
+}
+
+.attached-files:empty {
+  display: none
+}
+
+.file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(99, 102, 241, 0.06);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  animation: chipIn 0.2s ease-out;
+  max-width: 220px;
+  transition: var(--transition)
+}
+
+.file-chip:hover {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.25)
+}
+
+.file-chip-icon {
+  font-size: 0.85rem;
+  flex-shrink: 0
+}
+
+.file-chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap
+}
+
+.file-chip-size {
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  flex-shrink: 0
+}
+
+.file-chip-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  object-fit: cover;
+  flex-shrink: 0
+}
+
+.file-chip-remove {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  flex-shrink: 0;
+  line-height: 1
+}
+
+.file-chip-remove:hover {
+  background: var(--accent-rose);
+  color: white
+}
+
+@keyframes chipIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1
+  }
+}
+
+/* ─── DROP OVERLAY ─── */
+.drop-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(99, 102, 241, 0.08);
+  backdrop-filter: blur(2px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  z-index: 10;
+  pointer-events: none
+}
+
+.prompt-input-wrapper.drag-over .drop-overlay {
+  display: flex
+}
+
+.drop-overlay span {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--accent-indigo);
+  animation: dropPulse 1.5s infinite ease-in-out
+}
+
+@keyframes dropPulse {
+
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1)
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.05)
+  }
+}
+
+/* ─── FOLLOWUP FILE ATTACH ─── */
+.followup-area .attached-files {
+  flex: 0 0 auto;
+  width: 100%;
+  padding: 0 0 0.35rem
+}
+
+.followup-area .prompt-input-wrapper {
+  flex: 1;
+  box-shadow: none
+}
+
+.followup-attach-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0
+}
+
+.followup-attach-btn:hover {
+  background: rgba(99, 102, 241, 0.06);
+  color: var(--accent-indigo);
+  border-color: var(--border-glow)
+}
+
+.prompt-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center
+}
+
+/* ─── BUTTONS ─── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+  padding: 0.55rem 1.25rem
+}
+
+.btn-primary {
+  background: var(--gradient-primary);
+  color: white;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.25)
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35)
+}
+
+.btn-primary:active {
+  transform: translateY(0)
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none
+}
+
+.btn-ghost {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 0.4rem 0.75rem;
+  font-size: 0.75rem;
+  box-shadow: var(--shadow-sm)
+}
+
+.btn-ghost:hover {
+  color: var(--accent-indigo);
+  border-color: var(--border-glow);
+  box-shadow: var(--shadow-glow)
+}
+
+.btn-sm {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.72rem
+}
+
+.btn-icon {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center
+}
+
+.btn-icon:hover {
+  background: rgba(99, 102, 241, 0.06);
+  color: var(--accent-indigo);
+  border-color: var(--border-color)
+}
+
+/* ─── ROUND CONTAINER ─── */
+.round-container {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  background: var(--bg-card);
+  transition: var(--transition)
+}
+
+.round-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1rem;
+  background: rgba(248, 250, 252, 0.8);
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+  user-select: none;
+  transition: var(--transition)
+}
+
+.round-header:hover {
+  background: rgba(240, 242, 245, 0.9)
+}
+
+.round-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem
+}
+
+.round-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  color: white
+}
+
+.round-badge.initial {
+  background: var(--gradient-primary)
+}
+
+.round-badge.followup {
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo))
+}
+
+.round-prompt-preview {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 600px
+}
+
+.round-file-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--accent-indigo);
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  border-radius: 4px;
+  padding: 0.15rem 0.4rem;
+  white-space: nowrap
+}
+
+.round-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem
+}
+
+.collapse-icon {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  transition: transform 0.3s;
+  display: inline-block
+}
+
+.round-container.collapsed .collapse-icon {
+  transform: rotate(-90deg)
+}
+
+.round-container.collapsed .round-content {
+  display: none
+}
+
+.round-content {
+  padding: 0
+}
+
+/* ─── RESPONSE GRID (inside round) ─── */
+.responses-grid {
+  display: flex;
+  gap: 2px;
+  min-height: 300px;
+  position: relative;
+  padding: 0.75rem
+}
+
+.response-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  min-width: 0;
+  box-shadow: var(--shadow-sm)
+}
+
+.response-panel.active {
+  border-color: var(--border-glow);
+  box-shadow: var(--shadow-glow)
+}
+
+.response-panel.hidden-panel {
+  display: none
+}
+
+/* ─── PANEL EXPAND/COLLAPSE ─── */
+.response-panel.panel-collapsed {
+  display: none
+}
+
+.resize-handle.panel-collapsed {
+  display: none
+}
+
+.response-panel.expanded {
+  flex: 1 1 100%
+}
+
+.response-panel.expanded .panel-body {
+  max-height: none
+}
+
+.btn-expand {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center
+}
+
+.btn-expand:hover {
+  background: rgba(99, 102, 241, 0.06);
+  color: var(--accent-indigo);
+  border-color: var(--border-color)
+}
+
+.btn-expand svg {
+  width: 14px;
+  height: 14px
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  background: rgba(248, 250, 252, 0.5);
+  flex-shrink: 0
+}
+
+.panel-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem
+}
+
+.panel-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0
+}
+
+.panel-1 .panel-indicator {
+  background: var(--accent-cyan);
+  box-shadow: 0 0 6px rgba(8, 145, 178, 0.3)
+}
+
+.panel-2 .panel-indicator {
+  background: var(--accent-violet);
+  box-shadow: 0 0 6px rgba(139, 92, 246, 0.3)
+}
+
+.panel-3 .panel-indicator {
+  background: var(--accent-emerald);
+  box-shadow: 0 0 6px rgba(5, 150, 105, 0.3)
+}
+
+.panel-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap
+}
+
+.panel-actions {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0
+}
+
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.75rem;
+  font-size: 0.88rem;
+  line-height: 1.7
+}
+
+.panel-body::-webkit-scrollbar {
+  width: 4px
+}
+
+.panel-body::-webkit-scrollbar-track {
+  background: transparent
+}
+
+.panel-body::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px
+}
+
+.panel-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  text-align: center;
+  padding: 1.5rem
+}
+
+.panel-footer {
+  padding: 0.35rem 0.75rem;
+  border-top: 1px solid var(--border-color);
+  background: rgba(248, 250, 252, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  flex-shrink: 0
+}
+
+/* ─── PANEL FOLLOW-UP BAR ─── */
+.panel-followup-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  border-top: 1px solid var(--border-color);
+  background: rgba(248, 250, 252, 0.35);
+  flex-shrink: 0;
+  flex-wrap: wrap
+}
+
+.btn-followup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap
+}
+
+.btn-followup:hover {
+  color: var(--accent-indigo);
+  border-color: var(--border-glow);
+  background: rgba(99, 102, 241, 0.05);
+  box-shadow: var(--shadow-sm)
+}
+
+.btn-followup-ctx {
+  color: var(--text-muted)
+}
+
+.btn-followup-ctx:hover {
+  color: var(--accent-violet);
+  border-color: rgba(139, 92, 246, 0.35);
+  background: rgba(139, 92, 246, 0.05)
+}
+
+.panel-footer .usage-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem
+}
+
+.panel-footer .usage-label {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em
+}
+
+.panel-footer .usage-value {
+  color: var(--text-secondary);
+  font-weight: 500
+}
+
+.panel-footer .usage-credits {
+  color: var(--accent-amber);
+  font-weight: 600
+}
+
+/* ─── RESIZE HANDLE ─── */
+.resize-handle {
+  width: 6px;
+  cursor: col-resize;
+  background: transparent;
+  position: relative;
+  flex-shrink: 0;
+  z-index: 10;
+  transition: background 0.2s;
+  border-radius: 3px
+}
+
+.resize-handle:hover,
+.resize-handle.active {
+  background: var(--accent-indigo)
+}
+
+/* ─── ANALYSIS ─── */
+.analysis-section {
+  border-top: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.5)
+}
+
+.analysis-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  background: rgba(251, 243, 219, 0.25)
+}
+
+.analysis-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem
+}
+
+.analysis-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-amber);
+  box-shadow: 0 0 6px rgba(217, 119, 6, 0.3)
+}
+
+.analysis-body {
+  padding: 1rem;
+  min-height: 80px;
+  max-height: 400px;
+  overflow-y: auto;
+  font-size: 0.88rem;
+  line-height: 1.7
+}
+
+.analysis-body::-webkit-scrollbar {
+  width: 4px
+}
+
+.analysis-body::-webkit-scrollbar-track {
+  background: transparent
+}
+
+.analysis-body::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px
+}
+
+.analysis-footer {
+  padding: 0.35rem 0.75rem;
+  border-top: 1px solid var(--border-color);
+  background: rgba(248, 250, 252, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace
+}
+
+.analysis-footer .usage-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem
+}
+
+.analysis-footer .usage-label {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em
+}
+
+.analysis-footer .usage-value {
+  color: var(--text-secondary);
+  font-weight: 500
+}
+
+.analysis-footer .usage-credits {
+  color: var(--accent-amber);
+  font-weight: 600
+}
+
+/* ─── FOLLOW-UP INPUT ─── */
+.followup-area {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border-color);
+  background: rgba(248, 250, 252, 0.4);
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap
+}
+
+.followup-area textarea {
+  flex: 1;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.75rem;
+  resize: none;
+  min-height: 38px;
+  max-height: 100px;
+  outline: none;
+  transition: var(--transition);
+  line-height: 1.4
+}
+
+.followup-area textarea:focus {
+  border-color: var(--accent-indigo);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1)
+}
+
+.followup-area textarea::placeholder {
+  color: var(--text-muted)
+}
+
+/* ─── ROUNDS CONTAINER ─── */
+.rounds-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem
+}
+
+/* ─── SAVE-ALL BAR ─── */
+.save-all-bar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0 0.25rem
+}
+
+/* ─── MODAL ─── */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s
+}
+
+.modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 90%;
+  max-width: 700px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-color)
+}
+
+.modal-header h2 {
+  font-size: 1rem;
+  font-weight: 600
+}
+
+.modal-body {
+  padding: 1.25rem;
+  overflow-y: auto;
+  flex: 1
+}
+
+.modal-body textarea {
+  width: 100%;
+  min-height: 250px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  padding: 0.75rem;
+  outline: none;
+  resize: vertical;
+  line-height: 1.6;
+  transition: var(--transition)
+}
+
+.modal-body textarea:focus {
+  border-color: var(--accent-indigo);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1)
+}
+
+.modal-body p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid var(--border-color)
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0
+  }
+
+  to {
+    opacity: 1
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1
+  }
+}
+
+/* ─── MARKDOWN ─── */
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4 {
+  color: var(--text-primary);
+  margin: 1em 0 0.4em;
+  font-weight: 600;
+  line-height: 1.3
+}
+
+.markdown-content h1 {
+  font-size: 1.3rem
+}
+
+.markdown-content h2 {
+  font-size: 1.1rem
+}
+
+.markdown-content h3 {
+  font-size: 1rem
+}
+
+.markdown-content h4 {
+  font-size: 0.9rem
+}
+
+.markdown-content p {
+  margin: 0.4em 0
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin: 0.4em 0;
+  padding-left: 1.5em
+}
+
+.markdown-content li {
+  margin: 0.2em 0
+}
+
+.markdown-content code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85em;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.12);
+  padding: 0.12em 0.35em;
+  border-radius: 4px;
+  color: var(--accent-indigo)
+}
+
+.markdown-content pre {
+  background: #1e293b;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  overflow-x: auto;
+  margin: 0.6em 0
+}
+
+.markdown-content pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.82rem;
+  color: #e2e8f0
+}
+
+.markdown-content blockquote {
+  border-left: 3px solid var(--accent-indigo);
+  padding: 0.4em 0.75em;
+  margin: 0.6em 0;
+  background: rgba(99, 102, 241, 0.04);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--text-secondary)
+}
+
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.6em 0;
+  font-size: 0.82rem
+}
+
+.markdown-content th,
+.markdown-content td {
+  border: 1px solid var(--border-color);
+  padding: 0.4em 0.6em;
+  text-align: left
+}
+
+.markdown-content th {
+  background: rgba(99, 102, 241, 0.06);
+  font-weight: 600
+}
+
+.markdown-content hr {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: 0.8em 0
+}
+
+.markdown-content a {
+  color: var(--accent-indigo);
+  text-decoration: none
+}
+
+.markdown-content a:hover {
+  text-decoration: underline
+}
+
+.markdown-content strong {
+  color: var(--text-primary);
+  font-weight: 600
+}
+
+/* ─── INLINE IMAGES ─── */
+.markdown-content .md-image-figure {
+  margin: 0.8em 0;
+  padding: 0;
+  text-align: center
+}
+
+.markdown-content .md-inline-image {
+  max-width: 100%;
+  max-height: 500px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  cursor: zoom-in;
+  object-fit: contain;
+  display: inline-block
+}
+
+.markdown-content .md-inline-image:hover {
+  transform: scale(1.02);
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.12))
+}
+
+.markdown-content .md-image-figure figcaption {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.35em;
+  font-style: italic
+}
+
+.markdown-content .md-image-figure a {
+  display: inline-block;
+  text-decoration: none
+}
+
+.markdown-content .md-image-figure a:hover {
+  text-decoration: none
+}
+
+/* Handle base64 data URL images (from multimodal responses) */
+.markdown-content img:not(.md-inline-image) {
+  max-width: 100%;
+  max-height: 500px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  margin: 0.5em 0;
+  object-fit: contain;
+  display: block
+}
+
+/* ─── LOADING ─── */
+.loading-dots {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center
+}
+
+.loading-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-indigo);
+  animation: dotPulse 1.4s infinite ease-in-out both
+}
+
+.loading-dots span:nth-child(2) {
+  animation-delay: 0.16s
+}
+
+.loading-dots span:nth-child(3) {
+  animation-delay: 0.32s
+}
+
+@keyframes dotPulse {
+
+  0%,
+  80%,
+  100% {
+    transform: scale(0.4);
+    opacity: 0.4
+  }
+
+  40% {
+    transform: scale(1);
+    opacity: 1
+  }
+}
+
+/* ─── TOAST ─── */
+.toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1.25rem;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  box-shadow: var(--shadow-lg);
+  z-index: 1001;
+  animation: toastIn 0.3s ease-out;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem
+}
+
+.toast.success {
+  border-left: 3px solid var(--accent-emerald)
+}
+
+.toast.error {
+  border-left: 3px solid var(--accent-rose)
+}
+
+@keyframes toastIn {
+  from {
+    transform: translateY(20px);
+    opacity: 0
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1
+  }
+}
+
+/* ─── RESPONSIVE: TABLET (≤ 900px) ─── */
+@media (max-width: 900px) {
+  .responses-grid {
+    flex-direction: column
+  }
+
+  .resize-handle {
+    display: none
+  }
+
+  .response-panel {
+    min-height: 200px
+  }
+
+  .model-selectors {
+    flex-direction: column
+  }
+
+  .header-controls {
+    justify-content: flex-start
+  }
+
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start
+  }
+}
+
+/* ─── RESPONSIVE: PHONE (≤ 600px) ─── */
+@media (max-width: 600px) {
+  html {
+    font-size: 14px
+  }
+
+  /* ─ Header ─ */
+  .app-header {
+    padding: 0.5rem 0.75rem;
+    gap: 0.5rem
+  }
+
+  .app-logo h1 {
+    font-size: 1rem
+  }
+
+  .header-controls {
+    width: 100%;
+    gap: 0.5rem
+  }
+
+  #instructionsBtn {
+    font-size: 0.7rem !important;
+    padding: 0.35rem 0.5rem !important
+  }
+
+  /* ─ API Key ─ */
+  .api-key-group {
+    flex: 1;
+    min-width: 0
+  }
+
+  .api-key-group input {
+    width: 100%;
+    min-width: 0
+  }
+
+  /* ─ Main body ─ */
+  .app-main {
+    padding: 0.75rem 0.5rem
+  }
+
+  /* ─ Prompt section ─ */
+  .prompt-section {
+    padding: 0.75rem;
+    gap: 0.75rem;
+    border-radius: var(--radius-md)
+  }
+
+  .model-slots-dynamic {
+    flex-direction: column;
+    gap: 0.5rem
+  }
+
+  .model-slot {
+    min-width: 0;
+    max-width: none;
+    width: 100%
+  }
+
+  .model-slot select,
+  .analysis-model select {
+    font-size: 0.82rem;
+    padding: 0.45rem 0.6rem
+  }
+
+  .model-slot-actions {
+    flex-direction: row;
+    align-self: stretch;
+    gap: 0.5rem
+  }
+
+  .model-slot-actions .btn {
+    flex: 1
+  }
+
+  .analysis-model {
+    min-width: 0;
+    width: 100%
+  }
+
+  /* ─ Prompt input ─ */
+  .prompt-input-row {
+    flex-direction: column;
+    gap: 0.5rem
+  }
+
+  .prompt-input-wrapper {
+    width: 100%
+  }
+
+  .prompt-input-wrapper textarea {
+    font-size: 0.9rem;
+    padding: 0.6rem 0.75rem;
+    min-height: 50px
+  }
+
+  .prompt-actions {
+    width: 100%;
+    justify-content: flex-end
+  }
+
+  /* ─ Responses grid ─ */
+  .responses-grid {
+    padding: 0.5rem;
+    gap: 0.5rem;
+    min-height: auto
+  }
+
+  .response-panel {
+    min-height: 150px
+  }
+
+  .panel-header {
+    padding: 0.4rem 0.6rem
+  }
+
+  .panel-title {
+    font-size: 0.7rem
+  }
+
+  .panel-body {
+    padding: 0.6rem;
+    font-size: 0.82rem
+  }
+
+  .panel-footer {
+    padding: 0.3rem 0.6rem;
+    gap: 0.4rem;
+    font-size: 0.6rem;
+    flex-wrap: wrap
+  }
+
+  /* ─ Panel followup bar ─ */
+  .panel-followup-bar {
+    padding: 0.3rem 0.5rem;
+    gap: 0.25rem
+  }
+
+  .btn-followup {
+    font-size: 0.62rem;
+    padding: 0.15rem 0.35rem
+  }
+
+  /* ─ Analysis ─ */
+  .analysis-header {
+    padding: 0.4rem 0.75rem
+  }
+
+  .analysis-body {
+    padding: 0.75rem;
+    font-size: 0.82rem;
+    max-height: 300px
+  }
+
+  .analysis-footer {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.6rem;
+    flex-wrap: wrap
+  }
+
+  /* ─ Round header ─ */
+  .round-header {
+    padding: 0.5rem 0.75rem
+  }
+
+  .round-badge {
+    font-size: 0.6rem;
+    padding: 0.15rem 0.4rem
+  }
+
+  .round-prompt-preview {
+    font-size: 0.72rem;
+    max-width: 140px
+  }
+
+  .round-file-badge {
+    font-size: 0.6rem
+  }
+
+  /* ─ Follow-up area ─ */
+  .followup-area {
+    padding: 0.5rem 0.75rem;
+    flex-direction: column;
+    align-items: stretch
+  }
+
+  .followup-area textarea {
+    width: 100%;
+    font-size: 0.82rem
+  }
+
+  .followup-area .btn {
+    align-self: flex-end
+  }
+
+  /* ─ Save all bar ─ */
+  .save-all-bar {
+    flex-direction: column;
+    gap: 0.4rem
+  }
+
+  .save-all-bar .btn {
+    width: 100%;
+    justify-content: center
+  }
+
+  /* ─ Modal ─ */
+  .modal {
+    width: 95%;
+    max-height: 90vh
+  }
+
+  .modal-header {
+    padding: 0.75rem 1rem
+  }
+
+  .modal-body {
+    padding: 0.75rem
+  }
+
+  .modal-body textarea {
+    min-height: 180px;
+    font-size: 0.8rem
+  }
+
+  .modal-footer {
+    padding: 0.6rem 1rem
+  }
+
+  /* ─ Toast ─ */
+  .toast {
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: 0.75rem
+  }
+
+  /* ─ Markdown content ─ */
+  .markdown-content h1 { font-size: 1.15rem }
+  .markdown-content h2 { font-size: 1rem }
+  .markdown-content h3 { font-size: 0.9rem }
+  .markdown-content h4 { font-size: 0.82rem }
+
+  .markdown-content pre {
+    padding: 0.5rem;
+    font-size: 0.78rem
+  }
+
+  .markdown-content pre code {
+    font-size: 0.75rem
+  }
+
+  .markdown-content table {
+    font-size: 0.75rem;
+    display: block;
+    overflow-x: auto
+  }
+
+  /* ─ Slot remove button always visible on touch ─ */
+  .slot-remove-btn {
+    opacity: 0.6
+  }
+
+  /* ─ Buttons ─ */
+  .btn {
+    font-size: 0.8rem;
+    padding: 0.5rem 1rem
+  }
+
+  .btn-ghost {
+    font-size: 0.72rem;
+    padding: 0.35rem 0.6rem
+  }
+
+  .btn-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 0.82rem
+  }
+
+  .btn-expand {
+    width: 28px;
+    height: 28px
+  }
+
+  .btn-expand svg {
+    width: 12px;
+    height: 12px
+  }
+}
+</style>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="app-logo">
+      <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="28" height="28" rx="7" fill="url(#logoGrad)" />
+        <path d="M8 14L12 10L16 14L20 10" stroke="white" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round" />
+        <path d="M8 18L12 14L16 18L20 14" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          opacity="0.5" />
+        <defs>
+          <linearGradient id="logoGrad" x1="0" y1="0" x2="28" y2="28">
+            <stop stop-color="#6366f1" />
+            <stop offset="1" stop-color="#8b5cf6" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <h1>LLM Compare</h1>
+    </div>
+    <div class="header-controls">
+      <button id="instructionsBtn" class="btn btn-ghost" title="Customize analysis instructions">⚙️ Analysis
+        Prompt</button>
+      <div class="api-key-group">
+        <label for="apiKeyInput">API Key</label>
+        <input type="password" id="apiKeyInput" placeholder="sk-..." autocomplete="off" />
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="app-main">
+
+    <!-- PROMPT SECTION (always at top) -->
+    <section class="prompt-section">
+      <div class="model-selectors">
+        <div class="model-slots-dynamic" id="modelSlotsContainer">
+          <!-- Dynamic model slots inserted here by JS -->
+        </div>
+        <div class="model-slot-actions">
+          <button class="btn btn-ghost btn-add-model" id="addModelBtn" title="Add another model column">+ Model</button>
+          <button class="btn btn-ghost btn-reset-models" id="resetModelsBtn" title="Reset models to defaults">↩ Reset</button>
+        </div>
+        <div class="analysis-model">
+          <label>🔬 Analysis Model</label>
+          <select id="analysisModel"></select>
+        </div>
+      </div>
+      <div class="prompt-input-row">
+        <div class="prompt-input-wrapper" id="promptDropZone">
+          <textarea id="promptInput" rows="2"
+            placeholder="Ask a question to compare across models… (Ctrl+Enter to send)"></textarea>
+          <div class="attached-files" id="attachedFiles"></div>
+          <div class="drop-overlay" id="dropOverlay">
+            <span>📎 Drop files here</span>
+          </div>
+        </div>
+        <div class="prompt-actions">
+          <input type="file" id="fileInput" multiple
+            accept="image/*,.pdf,.txt,.md,.csv,.json,.xml,.yaml,.yml,.py,.js,.ts,.html,.css,.java,.c,.cpp,.h,.rs,.go,.rb,.sh,.sql,.r,.jl,.log"
+            hidden />
+          <button id="attachBtn" class="btn btn-ghost" title="Attach files (images, text, code, etc.)">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" viewBox="0 0 24 24">
+              <path
+                d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
+            </svg>
+            Attach
+          </button>
+          <button id="sendBtn" class="btn btn-primary">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" viewBox="0 0 24 24">
+              <path d="M22 2L11 13" />
+              <path d="M22 2L15 22L11 13L2 9L22 2Z" />
+            </svg>
+            Send
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROUNDS CONTAINER (dynamically populated) -->
+    <div id="roundsContainer" class="rounds-container"></div>
+
+    <!-- GLOBAL SAVE BAR -->
+    <div class="save-all-bar" id="globalSaveBar" style="display:none">
+      <button class="btn btn-ghost" onclick="copyEntireConversation()">� Copy Entire Conversation</button>
+      <button class="btn btn-ghost" onclick="saveEntireConversation()">💾 Save Entire Conversation</button>
+    </div>
+
+  </main>
+
+  <script>
 // ─── CONFIGURATION ───
 const API_BASE = 'https://routellm.abacus.ai/v1';
-const MODELS_API_URL = 'https://apps.abacus.ai/api/v0/listRouteLLMModels';
-
-// Will be populated dynamically from the API; keyed by model id for quick lookup
-let MODELS_DATA = []; // [{id, name, description, output_token_rate, input_token_rate}]
-let MODELS_BY_ID = {}; // id -> model object
+const MODELS = [
+  { group: '── Routing ──', models: ['route-llm'] },
+  { group: '── OpenAI ──', models: ['gpt-5.2-codex', 'gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo-2024-04-09', 'gpt-4', 'gpt-3.5-turbo'] },
+  { group: '── Anthropic ──', models: ['claude-sonnet-4-6', 'claude-opus-4-6', 'claude-sonnet-4-5-20250929', 'claude-opus-4-5-20251101', 'claude-haiku-4-5-20251001', 'claude-opus-4-1-20250805', 'claude-sonnet-4-20250514', 'claude-3-7-sonnet-20250219'] },
+  { group: '── Google ──', models: ['gemini-3.1-pro-preview', 'gemini-3-pro-preview', 'gemini-3-flash-preview', 'gemini-2.5-pro', 'gemini-2.5-flash'] },
+  { group: '── xAI ──', models: ['grok-4-0709', 'grok-4-1-fast-non-reasoning', 'grok-4-fast-non-reasoning', 'grok-code-fast-1'] },
+  { group: '── Meta ──', models: ['meta-llama/Llama-4-Maverick', 'meta-llama/Llama-3.1-405B-Turbo', 'meta-llama/Llama-3.1-8B', 'llama-3.3-70b-versatile'] },
+  { group: '── Qwen ──', models: ['qwen/qwen3-coder-480b-a35b', 'qwen3-max', 'Qwen/Qwen3-235B-A22B-Instruct', 'Qwen/Qwen3-32B', 'Qwen/QwQ-32B', 'Qwen/Qwen2.5-72B-Instruct', 'qwen-2.5-coder-32b'] },
+  { group: '── DeepSeek ──', models: ['deepseek-ai/DeepSeek-V3.2', 'deepseek/deepseek-v3.1', 'deepseek/deepseek-v3.1-Terminus', 'deepseek-ai/deepseek-R1'] },
+  { group: '── Kimi ──', models: ['kimi-k2.5', 'kimi-k2-turbo-preview'] },
+  { group: '── ZhipuAI ──', models: ['zai-org/glm-5', 'zai-org/glm-4.7', 'zai-org/glm-4.6', 'zai-org/glm-4.5'] },
+  { group: '── Other ──', models: ['openai/gpt-oss-120b'] }
+];
 
 const DEFAULT_ANALYSIS_MODEL = 'gpt-5.2-codex';
 
@@ -83,89 +1994,13 @@ let state = {
 //   histories: [[msgs],[msgs],[msgs]], collapsed: false,
 //   files: [{name, size, type, dataUrl, textContent}] }
 
-// ─── FETCH AVAILABLE MODELS FROM API ───
-async function fetchAvailableModels() {
-  try {
-    const headers = {};
-    const key = localStorage.getItem('abacus_api_key');
-    if (key) headers['apikey'] = key;
-    const res = await fetch(MODELS_API_URL, { headers });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    // API returns { success: true, result: [...] } or a plain array
-    const list = Array.isArray(data) ? data : (data.result || data.models || data.data || []);
-    if (list.length > 0) {
-      // Normalize: prefer display_name over name, rates are per-token (multiply by 1M for display)
-      MODELS_DATA = list.map(m => ({
-        id: m.id,
-        name: m.display_name || m.name || m.id,
-        description: m.description || '',
-        input_token_rate:  m.input_token_rate  != null ? Number(m.input_token_rate)  : null,
-        output_token_rate: m.output_token_rate != null ? Number(m.output_token_rate) : null
-      }));
-      MODELS_BY_ID = {};
-      MODELS_DATA.forEach(m => { MODELS_BY_ID[m.id] = m; });
-      return;
-    }
-    throw new Error('Empty model list from API');
-  } catch (err) {
-    console.warn('[LLM Compare] Could not fetch model list from API, using fallback.', err);
-    // Fallback: populate from hard-coded list
-    const fallback = [
-      'route-llm',
-      'gpt-5.2-codex', 'gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo-2024-04-09', 'gpt-4', 'gpt-3.5-turbo',
-      'claude-sonnet-4-6', 'claude-opus-4-6', 'claude-sonnet-4-5-20250929', 'claude-opus-4-5-20251101',
-      'claude-haiku-4-5-20251001', 'claude-opus-4-1-20250805', 'claude-sonnet-4-20250514', 'claude-3-7-sonnet-20250219',
-      'gemini-3.1-pro-preview', 'gemini-3-pro-preview', 'gemini-3-flash-preview', 'gemini-2.5-pro', 'gemini-2.5-flash',
-      'grok-4-0709', 'grok-4-1-fast-non-reasoning', 'grok-4-fast-non-reasoning', 'grok-code-fast-1',
-      'meta-llama/Llama-4-Maverick', 'meta-llama/Llama-3.1-405B-Turbo', 'meta-llama/Llama-3.1-8B', 'llama-3.3-70b-versatile',
-      'qwen/qwen3-coder-480b-a35b', 'qwen3-max', 'Qwen/Qwen3-235B-A22B-Instruct', 'Qwen/Qwen3-32B',
-      'Qwen/QwQ-32B', 'Qwen/Qwen2.5-72B-Instruct', 'qwen-2.5-coder-32b',
-      'deepseek-ai/DeepSeek-V3.2', 'deepseek/deepseek-v3.1', 'deepseek/deepseek-v3.1-Terminus', 'deepseek-ai/deepseek-R1',
-      'kimi-k2.5', 'kimi-k2-turbo-preview',
-      'zai-org/glm-5', 'zai-org/glm-4.7', 'zai-org/glm-4.6', 'zai-org/glm-4.5',
-      'openai/gpt-oss-120b'
-    ];
-    MODELS_DATA = fallback.map(id => ({ id, name: id, description: '', output_token_rate: null, input_token_rate: null }));
-    MODELS_BY_ID = {};
-    MODELS_DATA.forEach(m => { MODELS_BY_ID[m.id] = m; });
-  }
-}
-
-/** Get a model info object by id (falls back to a minimal placeholder) */
-function getModelInfo(modelId) {
-  return MODELS_BY_ID[modelId] || { id: modelId, name: modelId, description: '', output_token_rate: null, input_token_rate: null };
-}
-
-/** Format a token rate (credits per token) for display */
-function formatTokenRate(rate) {
-  if (rate == null) return '';
-  const scaled = Number(rate) * 1_000_000;
-  const formatted = Number(scaled.toPrecision(4)).toString();
-  return `${formatted} credits/token`;
-}
-
-/** Build a short cost badge string for a model */
-function modelCostBadge(modelId) {
-  const m = getModelInfo(modelId);
-  if (m.output_token_rate == null) return '';
-  return ` · out ${formatTokenRate(m.output_token_rate)}`;
-}
-
 // ─── INIT ───
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
   initApiKey();
-  await fetchAvailableModels();
   populateModelSelectors();
   bindEvents();
   loadCustomInstructions();
   configureMarked();
-
-  // Close description tooltips when tapping outside (mobile)
-  document.addEventListener('click', () => {
-    document.querySelectorAll('.model-info-desc-wrapper.tooltip-open')
-      .forEach(d => d.classList.remove('tooltip-open'));
-  });
 });
 
 function initApiKey() {
@@ -176,18 +2011,6 @@ function initApiKey() {
   input.addEventListener('input', (e) => {
     state.apiKey = e.target.value.trim();
     localStorage.setItem('abacus_api_key', state.apiKey);
-  });
-  input.addEventListener('blur', async () => {
-    // Re-fetch and re-render if key changes so rates/models update correctly
-    await fetchAvailableModels();
-    document.querySelectorAll('.model-info-text').forEach(e => e.remove());
-    document.getElementById('modelSlotsContainer').innerHTML = '';
-    
-    // Clear the analysis model select explicitly to prevent duplicates
-    const analysisSel = document.getElementById('analysisModel');
-    if (analysisSel) analysisSel.innerHTML = '';
-    
-    populateModelSelectors();
   });
 }
 
@@ -204,20 +2027,7 @@ function populateModelSelectors() {
   while (templateSel.firstChild) {
     analysisSel.appendChild(templateSel.firstChild);
   }
-  // Try to set value; fallback to first option if DEFAULT_ANALYSIS_MODEL isn't in the list
   analysisSel.value = DEFAULT_ANALYSIS_MODEL;
-  if (!analysisSel.value && analysisSel.options.length > 0) {
-    analysisSel.selectedIndex = 0;
-  }
-
-  // Show description below analysis model select
-  const analysisModelWrapper = analysisSel.closest('.analysis-model') || analysisSel.parentElement;
-  const analysisInfoEl = document.createElement('div');
-  analysisInfoEl.className = 'model-info-text';
-  analysisModelWrapper.appendChild(analysisInfoEl);
-  const updateAnalysisInfo = () => updateModelInfoDisplay(analysisInfoEl, analysisSel.value);
-  analysisSel.addEventListener('change', () => { saveModelConfig(); updateAnalysisInfo(); });
-  updateAnalysisInfo();
 
   // Try to load saved config from localStorage
   const savedConfig = loadModelConfig();
@@ -226,10 +2036,7 @@ function populateModelSelectors() {
     // Restore saved model slots
     savedConfig.slots.forEach(modelValue => addModelSlot(modelValue, true));
     // Restore analysis model
-    if (savedConfig.analysisModel) {
-      analysisSel.value = savedConfig.analysisModel;
-      updateAnalysisInfo();
-    }
+    if (savedConfig.analysisModel) analysisSel.value = savedConfig.analysisModel;
   } else {
     // Create default 3 model slots
     DEFAULT_MODELS.forEach(defaultModel => addModelSlot(defaultModel, true));
@@ -243,13 +2050,11 @@ function populateModelSelectors() {
 
   // Bind reset button
   document.getElementById('resetModelsBtn').addEventListener('click', resetModelsToDefault);
+
+  // Save analysis model changes
+  analysisSel.addEventListener('change', () => saveModelConfig());
 }
 
-/**
- * Build a flat <select> from MODELS_DATA.
- * Each option text shows: name + cost badge.
- * Groups are derived from the name prefix heuristic.
- */
 function createModelSelect(includeNone) {
   const sel = document.createElement('select');
   if (includeNone) {
@@ -257,104 +2062,17 @@ function createModelSelect(includeNone) {
     opt.value = ''; opt.textContent = '— None —';
     sel.appendChild(opt);
   }
-
-  // Group models by provider prefix
-  const groups = {};
-  MODELS_DATA.forEach(m => {
-    const grp = detectModelGroup(m.name || m.id);
-    if (!groups[grp]) groups[grp] = [];
-    groups[grp].push(m);
-  });
-
-  const groupOrder = ['Routing', 'Anthropic', 'OpenAI', 'Google', 'Meta', 'xAI', 'DeepSeek', 'Qwen', 'ZhipuAI'];
-  
-  Object.entries(groups).sort((a, b) => {
-    let idxA = groupOrder.indexOf(a[0]);
-    let idxB = groupOrder.indexOf(b[0]);
-    if (idxA === -1) idxA = 999;
-    if (idxB === -1) idxB = 999;
-    if (idxA !== idxB) return idxA - idxB;
-    return a[0].localeCompare(b[0]);
-  }).forEach(([groupName, models]) => {
+  MODELS.forEach(g => {
     const grp = document.createElement('optgroup');
-    grp.label = `── ${groupName} ──`;
-    
-    // Sort models by most expensive first
-    models.sort((a, b) => {
-      const costA = a.output_token_rate != null ? Number(a.output_token_rate) : -1;
-      const costB = b.output_token_rate != null ? Number(b.output_token_rate) : -1;
-      if (costA !== costB) return costB - costA;
-      return (a.name || '').localeCompare(b.name || '');
-    }).forEach(m => {
+    grp.label = g.group;
+    g.models.forEach(m => {
       const opt = document.createElement('option');
-      opt.value = m.id;
-      const rate = m.output_token_rate != null ? Number(m.output_token_rate) * 1_000_000 : null;
-      const costSuffix = rate != null ? ` [${Number(rate.toPrecision(4)).toString()} cr/tok]` : '';
-      opt.textContent = `${m.name}${costSuffix}`;
+      opt.value = m; opt.textContent = m;
       grp.appendChild(opt);
     });
     sel.appendChild(grp);
   });
-
   return sel;
-}
-
-/** Heuristic: derive a group/provider name from model id/name */
-function detectModelGroup(name) {
-  const n = name.toLowerCase();
-  if (n.includes('route-llm') || n.includes('routellm')) return 'Routing';
-  if (n.includes('gpt') || n.includes('openai') || n.includes('o1') || n.includes('o3') || n.includes('codex')) return 'OpenAI';
-  if (n.includes('claude')) return 'Anthropic';
-  if (n.includes('gemini')) return 'Google';
-  if (n.includes('grok')) return 'xAI';
-  if (n.includes('llama') || n.includes('meta')) return 'Meta';
-  if (n.includes('qwen') || n.includes('qwq')) return 'Qwen';
-  if (n.includes('deepseek')) return 'DeepSeek';
-  if (n.includes('kimi') || n.includes('moonshot')) return 'Kimi';
-  if (n.includes('glm') || n.includes('zai-org') || n.includes('zhipu')) return 'ZhipuAI';
-  if (n.includes('mistral')) return 'Mistral';
-  if (n.includes('command') || n.includes('cohere')) return 'Cohere';
-  return 'Other';
-}
-
-/** Update a model-info element with description + token rate for a given model id */
-function updateModelInfoDisplay(el, modelId) {
-  if (!el) return;
-  if (!modelId) { el.innerHTML = ''; el.style.display = 'none'; return; }
-  const m = getModelInfo(modelId);
-
-  const costParts = [];
-  if (m.output_token_rate != null) costParts.push(`🪙 Out: ${formatTokenRate(m.output_token_rate)}`);
-  if (m.input_token_rate  != null) costParts.push(`In: ${formatTokenRate(m.input_token_rate)}`);
-
-  if (costParts.length === 0 && !m.description) { el.innerHTML = ''; el.style.display = 'none'; return; }
-
-  let html = '';
-  if (costParts.length > 0) {
-    html += `<div class="model-info-costs">${costParts.map(p => `<span class="model-info-cost">${escapeHtml(p)}</span>`).join('')}</div>`;
-  }
-  if (m.description) {
-    // Truncated visible text + custom hover/tap tooltip with full description
-    html += `<div class="model-info-desc-wrapper" data-full-desc="${escapeHtml(m.description)}">
-      <span class="model-info-desc">${escapeHtml(m.description)}</span>
-      <div class="model-info-tooltip">${escapeHtml(m.description)}</div>
-    </div>`;
-  }
-  el.innerHTML = html;
-  el.style.display = '';
-
-  // Tap-to-show tooltip (mobile)
-  const descWrapperEl = el.querySelector('.model-info-desc-wrapper');
-  if (descWrapperEl) {
-    descWrapperEl.addEventListener('click', (e) => {
-      e.stopPropagation();
-      // Close any other open tooltips
-      document.querySelectorAll('.model-info-desc-wrapper.tooltip-open').forEach(d => {
-        if (d !== descWrapperEl) d.classList.remove('tooltip-open');
-      });
-      descWrapperEl.classList.toggle('tooltip-open');
-    });
-  }
 }
 
 function addModelSlot(defaultModel, skipSave) {
@@ -390,33 +2108,18 @@ function addModelSlot(defaultModel, skipSave) {
 
   const sel = createModelSelect(true);
   sel.id = `model-slot-${slotId}`;
-  if (defaultModel) {
-    sel.value = defaultModel;
-    // If saved value not in list (e.g. old model removed), don't break
-    if (sel.value !== defaultModel) sel.selectedIndex = 0;
-  }
-
-  // Model info display below the select
-  const infoEl = document.createElement('div');
-  infoEl.className = 'model-info-text';
-  infoEl.id = `model-info-${slotId}`;
+  if (defaultModel) sel.value = defaultModel;
 
   // Fade behavior: when "None" is selected, fade the slot
   updateSlotFade(wrapper, sel.value);
-  const onSelChange = () => {
+  sel.addEventListener('change', () => {
     updateSlotFade(wrapper, sel.value);
-    updateModelInfoDisplay(infoEl, sel.value);
     saveModelConfig();
-  };
-  sel.addEventListener('change', onSelChange);
+  });
 
   wrapper.appendChild(label);
   wrapper.appendChild(sel);
-  wrapper.appendChild(infoEl);
   container.appendChild(wrapper);
-
-  // Initial info display
-  updateModelInfoDisplay(infoEl, sel.value);
 
   updateSlotLabels();
   if (!skipSave) saveModelConfig();
@@ -832,7 +2535,7 @@ function buildRoundDOM(roundIdx, prompt, isInitial, models, files = []) {
             <div class="panel-header">
               <div class="panel-header-left">
                 <div class="panel-indicator" style="background: ${color.css}; box-shadow: 0 0 6px ${color.shadow}"></div>
-                <span class="panel-title" id="ptitle-${roundIdx}-${index}">${escapeHtml(modelObj.model)}</span>
+                <span class="panel-title">${escapeHtml(modelObj.model)}</span>
               </div>
               <div class="panel-actions">
                 <button class="btn-expand" title="Expand" onclick="toggleExpandPanel(${roundIdx},${index})">
@@ -851,8 +2554,7 @@ function buildRoundDOM(roundIdx, prompt, isInitial, models, files = []) {
               <div class="panel-status"><div class="loading-dots"><span></span><span></span><span></span></div></div>
             </div>
             <div class="panel-footer" id="footer-${roundIdx}-${index}" style="display:none"></div>
-            <div id="fbar-container-${roundIdx}-${index}">
-              ${provider ? `<div class="panel-followup-bar">
+            ${provider ? `<div class="panel-followup-bar">
                 <button class="btn-followup" title="Copy prompt and open ${provider.name}" onclick="followUpReask(${roundIdx},${index})">
                   ${provider.icon} Re-ask on ${provider.name}
                 </button>
@@ -860,7 +2562,6 @@ function buildRoundDOM(roundIdx, prompt, isInitial, models, files = []) {
                   📋→${provider.icon} Follow up with context
                 </button>
               </div>` : ''}
-            </div>
           </div>
           ${!isLast && models.length > 1 ? `<div class="resize-handle" id="handle-${roundIdx}-${index}"></div>` : ''}
         `;}).join('')}
@@ -870,7 +2571,6 @@ function buildRoundDOM(roundIdx, prompt, isInitial, models, files = []) {
           <div class="analysis-header-left">
             <div class="analysis-indicator"></div>
             <span class="panel-title">Comparative Analysis</span>
-            <span class="analysis-model-badge" id="abadge-${roundIdx}" style="display:none"></span>
           </div>
           <div class="panel-actions">
             <button class="btn-icon" title="Copy analysis" onclick="copyAnalysis(${roundIdx})">📋</button>
@@ -948,30 +2648,6 @@ async function streamCompletion(model, messages, roundIdx, panelIndex) {
         if (data === '[DONE]') continue;
         try {
           const parsed = JSON.parse(data);
-          
-          if (parsed.model && model === 'route-llm') {
-            const titleEl = document.getElementById(`ptitle-${roundIdx}-${panelIndex}`);
-            if (titleEl && !titleEl.textContent.includes('→')) {
-              const newTitle = `route-llm → ${parsed.model}`;
-              titleEl.textContent = newTitle;
-              state.rounds[roundIdx].responseModels[panelIndex] = newTitle;
-              
-              // Dynamically show followup re-ask buttons if a known provider was matched
-              const actualProvider = getModelProvider(parsed.model);
-              const fbarContainer = document.getElementById(`fbar-container-${roundIdx}-${panelIndex}`);
-              if (actualProvider && fbarContainer && !fbarContainer.innerHTML.trim()) {
-                fbarContainer.innerHTML = `<div class="panel-followup-bar">
-                  <button class="btn-followup" title="Copy prompt and open ${actualProvider.name}" onclick="followUpReask(${roundIdx},${panelIndex})">
-                    ${actualProvider.icon} Re-ask on ${actualProvider.name}
-                  </button>
-                  <button class="btn-followup btn-followup-ctx" title="Copy prompt + response and open ${actualProvider.name}" onclick="followUpWithContext(${roundIdx},${panelIndex})">
-                    📋→${actualProvider.icon} Follow up with context
-                  </button>
-                </div>`;
-              }
-            }
-          }
-
           const delta = parsed.choices?.[0]?.delta?.content;
           if (delta) {
             fullText += delta;
@@ -1005,14 +2681,7 @@ async function streamCompletion(model, messages, roundIdx, panelIndex) {
 async function runAnalysis(roundIdx, prompt, responses) {
   const analysisModel = document.getElementById('analysisModel').value;
   const analysisBody = document.getElementById(`abody-${roundIdx}`);
-  const analysisBadge = document.getElementById(`abadge-${roundIdx}`);
   analysisBody.innerHTML = '<div class="panel-status"><div class="loading-dots"><span></span><span></span><span></span></div>&nbsp; Analyzing…</div>';
-
-  // Show initial badge with the selected model name
-  if (analysisBadge) {
-    analysisBadge.textContent = analysisModel;
-    analysisBadge.style.display = '';
-  }
 
   // For follow-ups, build full conversation context
   let userMessage;
@@ -1072,15 +2741,6 @@ async function runAnalysis(roundIdx, prompt, responses) {
         if (data === '[DONE]') continue;
         try {
           const parsed = JSON.parse(data);
-
-          // If route-llm was used, update the badge once the actual model is revealed
-          if (parsed.model && analysisModel === 'route-llm' && analysisBadge) {
-            if (!analysisBadge.textContent.includes('→')) {
-              analysisBadge.textContent = `route-llm → ${parsed.model}`;
-              state.rounds[roundIdx].analysisResolvedModel = parsed.model;
-            }
-          }
-
           const delta = parsed.choices?.[0]?.delta?.content;
           if (delta) {
             fullText += delta;
@@ -1300,7 +2960,7 @@ function followUpReask(roundIdx, panelIndex) {
   const provider = getModelProvider(modelName);
   if (!provider) return showToast('No web interface for this model', 'error');
 
-  // Build the prompt from ALL rounds up to and including this one
+  // Build the prompt text from the full conversation
   let promptText = '';
   for (let r = 0; r <= roundIdx; r++) {
     if (r === 0) {
@@ -1310,11 +2970,11 @@ function followUpReask(roundIdx, panelIndex) {
     }
   }
 
-  showLaunchModal({
-    provider,
-    text: promptText,
-    title: `${provider.icon} Re-ask on ${provider.name}`,
-    description: `This is the original prompt${roundIdx > 0 ? ' (plus any follow-ups)' : ''}. It will be copied to your clipboard — just paste it into ${provider.name}.`
+  navigator.clipboard.writeText(promptText).then(() => {
+    showToast(`Prompt copied! Opening ${provider.name}…`, 'success');
+    window.open(provider.url, '_blank');
+  }).catch(() => {
+    showToast('Failed to copy to clipboard', 'error');
   });
 }
 
@@ -1325,7 +2985,7 @@ function followUpWithContext(roundIdx, panelIndex) {
   const provider = getModelProvider(modelName);
   if (!provider) return showToast('No web interface for this model', 'error');
 
-  // Build full context: all prompts + this model's responses for every round
+  // Build full context: prompt + this model's response
   let contextText = '';
   for (let r = 0; r <= roundIdx; r++) {
     const round = state.rounds[r];
@@ -1338,74 +2998,14 @@ function followUpWithContext(roundIdx, panelIndex) {
       contextText += `\n\n${modelName}'s response:\n${round.responses[panelIndex]}`;
     }
   }
-  contextText += '\n\n---\nI\'d like to continue this conversation. ';
+  contextText += '\n\n---\nI\'d like to follow up on the above. ';
 
-  showLaunchModal({
-    provider,
-    text: contextText,
-    title: `📋→${provider.icon} Follow up with context on ${provider.name}`,
-    description: `This includes the full conversation with ${modelName}'s response. It will be copied to your clipboard — paste it into ${provider.name} to continue with full context.`
+  navigator.clipboard.writeText(contextText).then(() => {
+    showToast(`Prompt + response copied! Opening ${provider.name}…`, 'success');
+    window.open(provider.url, '_blank');
+  }).catch(() => {
+    showToast('Failed to copy to clipboard', 'error');
   });
-}
-
-// ─── LAUNCH MODAL ───
-function showLaunchModal({ provider, text, title, description }) {
-  // Remove any existing modal
-  const existing = document.getElementById('launchModal');
-  if (existing) existing.remove();
-
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
-  overlay.id = 'launchModal';
-  overlay.innerHTML = `
-    <div class="modal launch-modal">
-      <div class="modal-header">
-        <h2>${escapeHtml(title)}</h2>
-        <button class="btn-icon" onclick="closeLaunchModal()" title="Close">✕</button>
-      </div>
-      <div class="modal-body">
-        <p class="launch-desc">${escapeHtml(description)}</p>
-        <div class="launch-steps">
-          <span class="launch-step">1️⃣ Click <strong>Copy &amp; Open</strong> below</span>
-          <span class="launch-step">2️⃣ ${provider.name} opens in a new tab</span>
-          <span class="launch-step">3️⃣ Paste into the chat box (<kbd>⌘V</kbd> / <kbd>Ctrl+V</kbd>)</span>
-        </div>
-        <label class="launch-preview-label">Text that will be copied:</label>
-        <textarea class="launch-preview" id="launchPreviewText" readonly>${escapeHtml(text)}</textarea>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-ghost" onclick="closeLaunchModal()">Cancel</button>
-        <button class="btn btn-primary" id="launchCopyOpenBtn">
-          📋 Copy &amp; Open ${escapeHtml(provider.name)}
-        </button>
-      </div>
-    </div>`;
-
-  document.body.appendChild(overlay);
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeLaunchModal(); });
-
-  // Wire copy & open button
-  document.getElementById('launchCopyOpenBtn').addEventListener('click', () => {
-    navigator.clipboard.writeText(text).then(() => {
-      showToast(`Copied! Paste into ${provider.name}`, 'success');
-      window.open(provider.url, '_blank');
-      closeLaunchModal();
-    }).catch(() => {
-      // Fallback: select the textarea so user can manually copy
-      const ta = document.getElementById('launchPreviewText');
-      ta.select();
-      showToast('Auto-copy failed — text selected, press Ctrl+C / ⌘C to copy', 'error');
-    });
-  });
-
-  // Auto-select the preview textarea on click
-  const ta = document.getElementById('launchPreviewText');
-  ta.addEventListener('click', () => ta.select());
-}
-
-function closeLaunchModal() {
-  const m = document.getElementById('launchModal');
-  if (m) m.remove();
 }
 
 async function savePanelMd(roundIdx, panelIndex) {
@@ -1439,8 +3039,7 @@ function buildRoundMd(roundIdx) {
   let md = `## ${roundIdx === 0 ? 'Initial Query' : `Follow-up #${roundIdx}`}\n\n**Prompt:** ${rd.prompt}\n\n---\n`;
   state.activeModels.forEach(({ index, model }) => {
     if (rd.responses[index]) {
-      const actualModel = rd.responseModels[index] || model;
-      md += `\n### ${actualModel}\n\n${rd.responses[index]}\n\n---\n`;
+      md += `\n### ${model}\n\n${rd.responses[index]}\n\n---\n`;
     }
   });
   if (rd.analysis) md += `\n### Comparative Analysis\n\n${rd.analysis}\n\n---\n`;
@@ -1462,11 +3061,7 @@ async function saveRound(roundIdx) {
 // ─── SAVE/COPY ENTIRE CONVERSATION ───
 function buildFullConversationMd() {
   let md = `# LLM Comparison Report\n\n**Date:** ${new Date().toLocaleString()}\n\n`;
-  const latestRound = state.rounds[state.rounds.length - 1];
-  const modelNames = latestRound 
-    ? state.activeModels.map(m => latestRound.responseModels[m.index] || m.model)
-    : state.activeModels.map(m => m.model);
-  md += `**Models:** ${modelNames.join(', ')}\n\n`;
+  md += `**Models:** ${state.activeModels.map(m => m.model).join(', ')}\n\n`;
   md += `**Analysis Model:** ${document.getElementById('analysisModel').value}\n\n---\n`;
   state.rounds.forEach((rd, i) => { md += '\n' + buildRoundMd(i); });
   return md;
@@ -1627,3 +3222,8 @@ function configureMarked() {
     gfm: true
   });
 }
+
+</script>
+</body>
+
+</html>

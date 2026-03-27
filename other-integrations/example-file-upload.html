@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Client — File Upload / Vision Example</title>
+  <meta name="description" content="Multimodal example: upload images and files to send to LLMs for analysis." />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    :root {
+      --bg-base: #0b1120;
+      --bg-surface: #111827;
+      --bg-elevated: #1e293b;
+      --border: rgba(148,163,184,0.12);
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent: #8b5cf6;
+      --accent-glow: rgba(139,92,246,0.25);
+      --radius: 14px;
+      --radius-sm: 8px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg-base);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+    }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    .container { max-width: 800px; width: 100%; }
+
+    h1 {
+      font-size: 1.8rem; font-weight: 700;
+      background: linear-gradient(135deg, #8b5cf6, #a78bfa, #c4b5fd);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+    .subtitle { color: var(--text-muted); margin-bottom: 2rem; font-size: 0.95rem; }
+
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .card-title {
+      font-size: 0.85rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 1rem;
+    }
+
+    .input-group { display: flex; gap: 10px; align-items: center; margin-bottom: 1rem; }
+    label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); min-width: 85px; }
+    input, select, textarea {
+      flex: 1; padding: 10px 14px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border); background: var(--bg-elevated);
+      color: var(--text); font-size: 0.9rem; font-family: inherit;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    textarea { resize: vertical; min-height: 60px; }
+
+    /* ─── DROP ZONE ─── */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      text-align: center;
+      color: var(--text-muted);
+      transition: all 0.3s;
+      cursor: pointer;
+      position: relative;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(139,92,246,0.05);
+    }
+    .drop-zone .emoji { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
+    .drop-zone small { display: block; margin-top: 0.5rem; font-size: 0.8rem; }
+
+    /* ─── FILE CHIPS ─── */
+    .file-chips {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 1rem;
+    }
+    .file-chip {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 20px; padding: 6px 14px; font-size: 0.82rem;
+      animation: chip-in 0.2s ease;
+    }
+    @keyframes chip-in {
+      from { opacity: 0; transform: scale(0.8); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    .file-chip img {
+      width: 28px; height: 28px; border-radius: 6px; object-fit: cover;
+    }
+    .file-chip .remove {
+      background: none; border: none; color: var(--text-muted);
+      cursor: pointer; font-size: 1rem; padding: 0 2px;
+      transition: color 0.2s;
+    }
+    .file-chip .remove:hover { color: #ef4444; }
+    .file-size { color: var(--text-muted); font-size: 0.75rem; }
+
+    /* ─── BUTTONS ─── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 20px; border-radius: var(--radius-sm); border: none;
+      font-size: 0.9rem; font-weight: 600; cursor: pointer; font-family: inherit;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+      color: white; box-shadow: 0 4px 16px rgba(139,92,246,0.35);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(139,92,246,0.45); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn-row { display: flex; gap: 10px; margin-top: 1rem; }
+
+    /* ─── RESPONSE ─── */
+    .response-area {
+      min-height: 100px; border-radius: var(--radius-sm);
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      padding: 1.25rem; font-size: 0.92rem; line-height: 1.7;
+      overflow-y: auto; max-height: 500px;
+    }
+    .response-area.streaming { border-color: var(--accent); }
+    .response-area .placeholder { color: var(--text-muted); font-style: italic; }
+    .response-area code {
+      background: rgba(139,92,246,0.12); padding: 2px 6px; border-radius: 4px; font-size: 0.85em;
+    }
+    .response-area pre {
+      background: rgba(0,0,0,0.4); border-radius: var(--radius-sm);
+      padding: 1rem; overflow-x: auto; margin: 1em 0;
+    }
+    .response-area pre code { background: none; padding: 0; }
+
+    .loading-dots { display: inline-flex; gap: 4px; align-items: center; }
+    .loading-dots span {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+      display: inline-block; animation: dot-bounce 1.4s ease-in-out infinite both;
+    }
+    .loading-dots span:nth-child(2) { animation-delay: 0.16s; }
+    .loading-dots span:nth-child(3) { animation-delay: 0.32s; }
+    @keyframes dot-bounce {
+      0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>📎 LLM Vision — File Upload</h1>
+  <p class="subtitle">Upload images or text files to analyze with any LLM. Demonstrates multimodal input handling.</p>
+
+  <!-- CONFIG -->
+  <div class="card">
+    <div class="card-title">⚙️ Configuration</div>
+    <div class="input-group">
+      <label for="apiKey">API Key</label>
+      <input type="password" id="apiKey" placeholder="sk-..." autocomplete="off" />
+    </div>
+    <div class="input-group">
+      <label for="model">Model</label>
+      <select id="model"></select>
+    </div>
+  </div>
+
+  <!-- FILE UPLOAD -->
+  <div class="card">
+    <div class="card-title">📄 Upload Files</div>
+    <div class="drop-zone" id="dropZone">
+      <span class="emoji">📂</span>
+      <strong>Drag & drop files here</strong><br>
+      or click to browse
+      <small>Images, code, text, CSV, JSON — up to 10MB each</small>
+      <input type="file" id="fileInput" multiple hidden
+        accept="image/*,.pdf,.txt,.md,.csv,.json,.xml,.yaml,.yml,.py,.js,.ts,.html,.css,.java,.c,.cpp,.h,.rs,.go,.rb,.sh,.sql,.r,.jl,.log" />
+    </div>
+    <div class="file-chips" id="fileChips"></div>
+  </div>
+
+  <!-- PROMPT -->
+  <div class="card">
+    <div class="card-title">💬 Your Question</div>
+    <textarea id="prompt" placeholder="What do you want to know about the uploaded files?"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="sendBtn">🔍 Analyze</button>
+    </div>
+  </div>
+
+  <!-- RESPONSE -->
+  <div class="card">
+    <div class="card-title">📝 Analysis</div>
+    <div class="response-area" id="responseArea">
+      <span class="placeholder">Upload files and ask a question to get started…</span>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { LLMClient, FileUtils, setupMarkdown } from './llm-client.js';
+
+  const client = new LLMClient({ provider: 'abacus' });
+  setupMarkdown();
+
+  // ── UI refs ──
+  const apiKeyInput = document.getElementById('apiKey');
+  const modelSelect = document.getElementById('model');
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+  const fileChips = document.getElementById('fileChips');
+  const promptInput = document.getElementById('prompt');
+  const sendBtn = document.getElementById('sendBtn');
+  const responseArea = document.getElementById('responseArea');
+
+  // Load key
+  apiKeyInput.value = client.apiKey;
+  apiKeyInput.addEventListener('input', (e) => { client.apiKey = e.target.value; });
+
+  // Populate models
+  for (const m of client.availableModels) {
+    const opt = document.createElement('option');
+    opt.value = m; opt.textContent = m;
+    modelSelect.appendChild(opt);
+  }
+  modelSelect.value = 'gpt-4o';
+
+  // ── File management ──
+  let processedFiles = [];
+
+  // Click to upload
+  dropZone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', async (e) => {
+    const newFiles = await FileUtils.processFiles(Array.from(e.target.files));
+    processedFiles.push(...newFiles);
+    renderChips();
+    fileInput.value = '';
+  });
+
+  // Drag and drop
+  let dragCounter = 0;
+  dropZone.addEventListener('dragenter', (e) => { e.preventDefault(); dragCounter++; dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dragCounter--; if (dragCounter <= 0) { dragCounter = 0; dropZone.classList.remove('drag-over'); } });
+  dropZone.addEventListener('dragover', (e) => e.preventDefault());
+  dropZone.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    dragCounter = 0;
+    dropZone.classList.remove('drag-over');
+    if (e.dataTransfer.files.length) {
+      const newFiles = await FileUtils.processFiles(Array.from(e.dataTransfer.files));
+      processedFiles.push(...newFiles);
+      renderChips();
+    }
+  });
+
+  function renderChips() {
+    fileChips.innerHTML = '';
+    processedFiles.forEach((f, i) => {
+      const chip = document.createElement('div');
+      chip.className = 'file-chip';
+
+      let preview = '';
+      if (f.dataUrl && f.type.startsWith('image/')) {
+        preview = `<img src="${f.dataUrl}" alt="${f.name}" />`;
+      } else {
+        const ext = f.name.split('.').pop().toLowerCase();
+        const icon = f.type.startsWith('image/') ? '🖼️' : ['py','js','ts','html','css'].includes(ext) ? '💻' : ['csv','json','xml'].includes(ext) ? '📊' : '📄';
+        preview = `<span>${icon}</span>`;
+      }
+
+      chip.innerHTML = `
+        ${preview}
+        <span>${f.name}</span>
+        <span class="file-size">${FileUtils.formatSize(f.size)}</span>
+        <button class="remove" data-idx="${i}">✕</button>
+      `;
+      chip.querySelector('.remove').addEventListener('click', () => {
+        processedFiles.splice(i, 1);
+        renderChips();
+      });
+      fileChips.appendChild(chip);
+    });
+  }
+
+  // ── Send ──
+  sendBtn.addEventListener('click', async () => {
+    const prompt = promptInput.value.trim() || 'Please describe and analyze the attached files.';
+    if (!client.hasApiKey) return alert('Please enter your API key');
+
+    const content = FileUtils.buildMessageContent(prompt, processedFiles);
+
+    responseArea.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div> Analyzing…';
+    responseArea.classList.add('streaming');
+    sendBtn.disabled = true;
+
+    client.stream({
+      model: modelSelect.value,
+      messages: [{ role: 'user', content }],
+      onToken: (token, fullText) => {
+        responseArea.innerHTML = marked.parse(fullText);
+        responseArea.scrollTop = responseArea.scrollHeight;
+      },
+      onDone: () => {
+        responseArea.classList.remove('streaming');
+        sendBtn.disabled = false;
+      },
+      onError: (err) => {
+        responseArea.innerHTML = `<span style="color:#ef4444">⚠️ ${err.message}</span>`;
+        responseArea.classList.remove('streaming');
+        sendBtn.disabled = false;
+      }
+    });
+  });
+</script>
+
+</body>
+</html>

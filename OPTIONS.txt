@@ -1,0 +1,68 @@
+* Host apps.abacus.ai:443 was resolved.
+* IPv6: 2606:4700:10::6814:23fb, 2606:4700:10::ac42:a15f
+* IPv4: 104.20.35.251, 172.66.161.95
+*   Trying [2606:4700:10::6814:23fb]:443...
+* Connected to apps.abacus.ai (2606:4700:10::6814:23fb) port 443
+* ALPN: curl offers h2,http/1.1
+* (304) (OUT), TLS handshake, Client hello (1):
+} [319 bytes data]
+*  CAfile: /etc/ssl/cert.pem
+*  CApath: none
+* (304) (IN), TLS handshake, Server hello (2):
+{ [122 bytes data]
+* (304) (IN), TLS handshake, Unknown (8):
+{ [19 bytes data]
+* (304) (IN), TLS handshake, Certificate (11):
+{ [2518 bytes data]
+* (304) (IN), TLS handshake, CERT verify (15):
+{ [79 bytes data]
+* (304) (IN), TLS handshake, Finished (20):
+{ [36 bytes data]
+* (304) (OUT), TLS handshake, Finished (20):
+} [36 bytes data]
+* SSL connection using TLSv1.3 / AEAD-CHACHA20-POLY1305-SHA256 / [blank] / UNDEF
+* ALPN: server accepted h2
+* Server certificate:
+*  subject: CN=apps.abacus.ai
+*  start date: Mar  9 05:34:00 2026 GMT
+*  expire date: Jun  7 06:33:58 2026 GMT
+*  subjectAltName: host "apps.abacus.ai" matched cert's "apps.abacus.ai"
+*  issuer: C=US; O=Google Trust Services; CN=WE1
+*  SSL certificate verify ok.
+* using HTTP/2
+* [HTTP/2] [1] OPENED stream for https://apps.abacus.ai/api/v0/listRouteLLMModels
+* [HTTP/2] [1] [:method: OPTIONS]
+* [HTTP/2] [1] [:scheme: https]
+* [HTTP/2] [1] [:authority: apps.abacus.ai]
+* [HTTP/2] [1] [:path: /api/v0/listRouteLLMModels]
+* [HTTP/2] [1] [user-agent: curl/8.7.1]
+* [HTTP/2] [1] [accept: */*]
+* [HTTP/2] [1] [access-control-request-method: GET]
+* [HTTP/2] [1] [access-control-request-headers: apikey]
+* [HTTP/2] [1] [origin: file://]
+> OPTIONS /api/v0/listRouteLLMModels HTTP/2
+> Host: apps.abacus.ai
+> User-Agent: curl/8.7.1
+> Accept: */*
+> Access-Control-Request-Method: GET
+> Access-Control-Request-Headers: apikey
+> Origin: file://
+> 
+* Request completely sent off
+< HTTP/2 204 
+< date: Thu, 26 Mar 2026 16:54:33 GMT
+< content-type: text/plain; charset=utf-8
+< server: cloudflare
+< access-control-allow-origin: *
+< access-control-allow-credentials: false
+< access-control-allow-methods: GET, PUT, POST, OPTIONS
+< access-control-allow-headers: DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,reai-ui,x-abacus-org-host,x-abacus-external-application-id,x-abacus-page-session-id,APIKEY,DEVICECODE,MOBILE-DEVICE-ID,MOBILE-DEVICE-SECRET,SESSION-TOKEN,x-stainless-runtime-version,x-stainless-runtime,x-stainless-retry-count,x-stainless-package-version,x-stainless-lang,x-stainless-arch,x-stainless-os
+< access-control-expose-headers: Content-Length,Content-Range
+< access-control-max-age: 1728000
+< x-envoy-upstream-service-time: 0
+< cf-cache-status: DYNAMIC
+< cf-ray: 9e27ad8e4a18f31f-SJC
+< alt-svc: h3=":443"; ma=86400
+< 
+{ [0 bytes data]
+* Connection #0 to host apps.abacus.ai left intact
